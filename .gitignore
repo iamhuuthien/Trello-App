@@ -52,6 +52,15 @@ firebase-debug.log
 .firebaserc
 .firebase/
 
+# Firebase service account keys - DO NOT COMMIT
+# ignore common filenames and patterns for admin SDK private keys
+/backend/serviceAccountKey.json
+/backend/*firebase-adminsdk-*.json
+/serviceAccountKey.json
+*firebase-adminsdk-*.json
+*serviceAccount*.json
+*private-key*.json
+
 # Misc
 *.pem
 *.key

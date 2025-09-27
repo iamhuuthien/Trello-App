@@ -10,8 +10,9 @@ const BOARDS = "boards";
 // GET /boards - list user's boards
 router.get("/", auth, async (req, res) => {
   try {
-    const email = req.user.email;
-    const q = db.collection(BOARDS).where("owner", "==", email);
+    // use ownerId format matching users docs
+    const ownerId = `user:${String(req.user.email).toLowerCase()}`;
+    const q = db.collection(BOARDS).where("ownerId", "==", ownerId);
     const snap = await q.get();
     const boards = [];
     snap.forEach((d) => boards.push({ id: d.id, ...d.data() }));
@@ -32,10 +33,10 @@ router.post(
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     try {
-      const email = req.user.email;
+      const ownerId = `user:${String(req.user.email).toLowerCase()}`;
       const payload = {
         title: req.body.title,
-        owner: email,
+        ownerId,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       const ref = await db.collection(BOARDS).add(payload);
@@ -55,7 +56,8 @@ router.get("/:id", auth, async (req, res) => {
     const snap = await db.collection(BOARDS).doc(id).get();
     if (!snap.exists) return res.status(404).json({ error: "not_found" });
     const data = snap.data();
-    if (data.owner !== req.user.email) return res.status(403).json({ error: "forbidden" });
+    const ownerId = `user:${String(req.user.email).toLowerCase()}`;
+    if (data.ownerId !== ownerId) return res.status(403).json({ error: "forbidden" });
     res.json({ ok: true, board: { id: snap.id, ...data } });
   } catch (err) {
     console.error("get board error:", err);
@@ -75,7 +77,8 @@ router.put(
       const snap = await ref.get();
       if (!snap.exists) return res.status(404).json({ error: "not_found" });
       const data = snap.data();
-      if (data.owner !== req.user.email) return res.status(403).json({ error: "forbidden" });
+      const ownerId = `user:${String(req.user.email).toLowerCase()}`;
+      if (data.ownerId !== ownerId) return res.status(403).json({ error: "forbidden" });
 
       await ref.update({
         ...(req.body.title ? { title: req.body.title } : {}),
@@ -98,7 +101,8 @@ router.delete("/:id", auth, async (req, res) => {
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: "not_found" });
     const data = snap.data();
-    if (data.owner !== req.user.email) return res.status(403).json({ error: "forbidden" });
+    const ownerId = `user:${String(req.user.email).toLowerCase()}`;
+    if (data.ownerId !== ownerId) return res.status(403).json({ error: "forbidden" });
 
     await ref.delete();
     res.json({ ok: true });

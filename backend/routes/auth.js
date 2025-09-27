@@ -2,6 +2,7 @@ const express = require("express");
 const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const sgMail = require('@sendgrid/mail');
 const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
@@ -9,28 +10,34 @@ const db = admin.firestore();
 const USERS = "users";
 const JWT_SECRET = process.env.JWT_SECRET || "dev_jwt_secret";
 
-// helper: create transporter (use SMTP if provided or Ethereal for dev)
-async function getTransporter() {
-  if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+// send helper: use SendGrid if configured, otherwise Ethereal test account
+async function sendMailDirect({ to, from, subject, text, html }) {
+  if (process.env.SENDGRID_API_KEY) {
+    if (!process.env.SMTP_FROM) {
+      throw new Error('SENDGRID requires SMTP_FROM to be set to a verified sender email');
+    }
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+      to,
+      from: process.env.SMTP_FROM,
+      subject,
+      text,
+      html,
+    };
+    const res = await sgMail.send(msg);
+    return { provider: 'sendgrid', accepted: [to], response: res && res[0] ? res[0].headers : null };
   }
+
+  // fallback: Ethereal (dev)
   const testAccount = await nodemailer.createTestAccount();
-  return nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     host: "smtp.ethereal.email",
     port: 587,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
+    auth: { user: testAccount.user, pass: testAccount.pass },
   });
+  const info = await transporter.sendMail({ from: from || `no-reply@${process.env.FIREBASE_PROJECT_ID || 'local'}.local`, to, subject, text, html });
+  const previewUrl = nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null;
+  return { provider: 'ethereal', accepted: info.accepted || [], response: info, previewUrl };
 }
 
 function makeCode() {
@@ -38,7 +45,8 @@ function makeCode() {
 }
 
 function emailToId(email) {
-  return encodeURIComponent(email.toLowerCase());
+  // Use the same id format as seed: "user:email@example.com"
+  return `user:${String(email).toLowerCase()}`;
 }
 
 // POST /auth/signup { email }
@@ -66,19 +74,21 @@ router.post(
         { merge: true }
       );
 
-      const transporter = await getTransporter();
-      const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || "no-reply@example.com",
-        to: email,
-        subject: "Your sign-in code",
-        text: `Your sign-in code: ${code} (expires in 15 minutes)`,
-        html: `<p>Your sign-in code: <strong>${code}</strong> (expires in 15 minutes)</p>`,
-      });
+      try {
+        const result = await sendMailDirect({
+          to: email,
+          from: process.env.SMTP_FROM || `no-reply@${process.env.FIREBASE_PROJECT_ID || 'local'}.local`,
+          subject: "Your sign-in code",
+          text: `Your sign-in code: ${code} (expires in 15 minutes)`,
+          html: `<p>Your sign-in code: <strong>${code}</strong> (expires in 15 minutes)</p>`,
+        });
 
-      const previewUrl = nodemailer.getTestMessageUrl(info) || null;
-      return res.json({ ok: true, previewUrl });
+        // return minimal info; include previewUrl only for ethereal dev
+        return res.json({ ok: true, previewUrl: result.previewUrl || null });
+      } catch (mailErr) {
+        return res.status(502).json({ error: "mail_error", message: mailErr && mailErr.message ? mailErr.message : String(mailErr) });
+      }
     } catch (err) {
-      console.error("signup error:", err);
       return res.status(500).json({ error: "internal_error" });
     }
   }
@@ -105,7 +115,6 @@ router.post(
       if (data.code !== code) return res.status(400).json({ error: "wrong_code" });
       if (Date.now() > (data.codeExpiresAt || 0)) return res.status(400).json({ error: "code_expired" });
 
-      // create user record if not present
       await db.collection(USERS).doc(id).set(
         {
           email,
@@ -119,7 +128,6 @@ router.post(
       const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "7d" });
       return res.json({ ok: true, token });
     } catch (err) {
-      console.error("signin error:", err);
       return res.status(500).json({ error: "internal_error" });
     }
   }

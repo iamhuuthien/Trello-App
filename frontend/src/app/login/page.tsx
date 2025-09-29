@@ -2,45 +2,74 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
-import Input from "../../components/ui/Input";
-import Button from "../../components/ui/Button";
-import { useAuth } from "../../context/AuthContext";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const auth = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: gọi API backend để xác thực, nhận token, v.v.
-    login({ name: name || "Người dùng", email });
-    router.replace("/");
+  const handleSend = async () => {
+    setLoading(true);
+    try {
+      await auth.signup(email);
+      setSent(true);
+    } catch (err) {
+      // minimal error handling
+      alert((err as Error).message || "Failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (isAuthenticated) {
-    // Nếu đã đăng nhập, tránh hiện form (client guard sẽ đổi hướng)
-    router.replace("/");
-    return null;
-  }
+  const handleSignin = async () => {
+    setLoading(true);
+    try {
+      const r = await auth.signin(email, code);
+      if (r.ok) {
+        router.replace("/");
+      } else {
+        alert(r.error || "Signin failed");
+      }
+    } catch (err) {
+      alert((err as Error).message || "Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-slate-100 rounded"><LogIn className="w-5 h-5 text-slate-600" /></div>
-          <h2 className="text-lg font-semibold">Đăng nhập TrelloApp</h2>
-        </div>
+    <div className="max-w-md mx-auto mt-24">
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">Sign in</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Tên hiển thị" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <div className="flex justify-end">
-            <Button type="submit">Đăng nhập</Button>
-          </div>
-        </form>
+        <div className="space-y-3">
+          <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+          {!sent && (
+            <Button onClick={handleSend} className="w-full" disabled={!email || loading}>
+              {loading ? "Sending..." : "Send sign-in code"}
+            </Button>
+          )}
+
+          {sent && (
+            <>
+              <Input label="Code" value={code} onChange={(e) => setCode(e.target.value)} />
+              <div className="flex gap-2">
+                <Button onClick={handleSignin} className="flex-1" disabled={!code || loading}>
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
+                <Button variant="secondary" onClick={() => setSent(false)}>
+                  Back
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

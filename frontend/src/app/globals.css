@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/* Biến màu mặc định (Light mode) */
+:root {
+  --background: #ffffff;
+  --foreground: #1f2937; /* gray-800 */
+  --muted: #6b7280; /* gray-500 */
+
+  --primary: #2563eb; /* blue-600 */
+  --primary-hover: #1d4ed8; /* blue-700 */
+
+  --secondary: #f3f4f6; /* gray-100 */
+  --secondary-hover: #e5e7eb; /* gray-200 */
+
+  --border: #e5e7eb; /* gray-200 */
+  --card: #ffffff;
+  --card-foreground: #111827; /* gray-900 */
+
+  --radius: 0.5rem; /* 8px border radius */
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827; /* gray-900 */
+    --foreground: #f9fafb; /* gray-50 */
+    --muted: #9ca3af; /* gray-400 */
+
+    --primary: #3b82f6; /* blue-500 */
+    --primary-hover: #2563eb; /* blue-600 */
+
+    --secondary: #1f2937; /* gray-800 */
+    --secondary-hover: #374151; /* gray-700 */
+
+    --border: #374151; /* gray-700 */
+    --card: #1f2937;
+    --card-foreground: #f9fafb;
+  }
+}
+
+/* Apply global */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  line-height: 1.5;
+}
+
+/* Card, Button, Input style base (dùng chung) */
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--foreground);
+}
+.btn-secondary:hover {
+  background-color: var(--secondary-hover);
+}

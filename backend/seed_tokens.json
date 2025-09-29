@@ -1,0 +1,20 @@
+{
+  "users": {
+    "userA": {
+      "email": "nhuuthien000@gmail.com",
+      "docId": "nhuuthien000%40gmail.com"
+    },
+    "userB": {
+      "email": "huutan890ht@gmail.com",
+      "docId": "huutan890ht%40gmail.com"
+    }
+  },
+  "boards": [
+    "board-seed-1",
+    "board-seed-2"
+  ],
+  "tokens": {
+    "userA": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im5odXV0aGllbjAwMEBnbWFpbC5jb20iLCJuYW1lIjoiTmh1dSBUaGllbiIsImlhdCI6MTc1OTEyNDkxMiwiZXhwIjoxNzYxNzE2OTEyfQ.Q0yxTG6pmnAcGzLNTs13r-0da-FvwaagszXurm-MAQ0",
+    "userB": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imh1dXRhbjg5MGh0QGdtYWlsLmNvbSIsIm5hbWUiOiJIdXUgVGFuIiwiaWF0IjoxNzU5MTI0OTEyLCJleHAiOjE3NjE3MTY5MTJ9.rIi68CGqXlh7oR-BU0qU5A7WPaWZKQxa6a7Q-Xm-cVM"
+  }
+}

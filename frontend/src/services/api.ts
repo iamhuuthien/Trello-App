@@ -7,19 +7,10 @@ async function fetchWithAuth(path: string, token?: string | null, opts: RequestI
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...opts,
-    headers,
-  });
-
+  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   const text = await res.text().catch(() => "");
   let json: any = {};
-  try {
-    json = text ? JSON.parse(text) : {};
-  } catch {
-    json = { raw: text };
-  }
-
+  try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
   if (!res.ok) {
     const err = new Error(json?.message || json?.error || "API error");
     (err as any).payload = json;
@@ -28,22 +19,56 @@ async function fetchWithAuth(path: string, token?: string | null, opts: RequestI
   return json;
 }
 
-/* Boards */
 export async function getBoards(token?: string | null) {
-  const payload = await fetchWithAuth("/boards", token, { method: "GET" });
-  return payload.boards ?? [];
+  const res = await fetchWithAuth("/boards", token);
+  return res.boards || [];
 }
 
+export async function getBoard(id: string, token?: string | null) {
+  const res = await fetchWithAuth(`/boards/${id}`, token);
+  return res.board || null;
+}
+
+export async function getCards(boardId: string, token?: string | null) {
+  const res = await fetchWithAuth(`/boards/${boardId}/cards`, token);
+  return res.cards || [];
+}
+
+export async function createCard(boardId: string, body: any, token?: string | null) {
+  const res = await fetchWithAuth(`/boards/${boardId}/cards`, token, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return res.card;
+}
+
+export async function updateCard(boardId: string, cardId: string, body: any, token?: string | null) {
+  const res = await fetchWithAuth(`/boards/${boardId}/cards/${cardId}`, token, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+  return res.card;
+}
+
+export async function getTasks(boardId: string, cardId: string, token?: string | null) {
+  const res = await fetchWithAuth(`/boards/${boardId}/cards/${cardId}/tasks`, token);
+  return res.tasks || [];
+}
+
+export async function createTask(boardId: string, cardId: string, body: any, token?: string | null) {
+  const res = await fetchWithAuth(`/boards/${boardId}/cards/${cardId}/tasks`, token, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return res.task;
+}
+
+/* Boards */
 export async function createBoard(title: string, token?: string | null, description?: string) {
   const payload = await fetchWithAuth("/boards", token, {
     method: "POST",
     body: JSON.stringify({ title, description }),
   });
-  return payload.board;
-}
-
-export async function getBoard(id: string, token?: string | null) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(id)}`, token, { method: "GET" });
   return payload.board;
 }
 
@@ -61,38 +86,8 @@ export async function deleteBoard(id: string, token?: string | null) {
 }
 
 /* Cards (spec uses field `name`) */
-export async function getCards(boardId: string, token?: string | null) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards`, token, { method: "GET" });
-  return payload.cards ?? [];
-}
-
 export async function getCard(boardId: string, cardId: string, token?: string | null) {
   const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}`, token, { method: "GET" });
-  return payload.card;
-}
-
-export async function createCard(
-  boardId: string,
-  body: { name: string; description?: string; status?: string; members?: string[]; priority?: string; deadline?: string | null },
-  token?: string | null
-) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards`, token, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-  return payload.card;
-}
-
-export async function updateCard(
-  boardId: string,
-  cardId: string,
-  body: Partial<{ name: string; description?: string; status?: string; members?: string[]; priority?: string; deadline?: string | null }>,
-  token?: string | null
-) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}`, token, {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
   return payload.card;
 }
 
@@ -109,19 +104,6 @@ export async function getCardsByUser(boardId: string, userId: string, token?: st
 }
 
 /* Tasks under a card */
-export async function getTasks(boardId: string, cardId: string, token?: string | null) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks`, token, { method: "GET" });
-  return payload.tasks ?? [];
-}
-
-export async function createTask(boardId: string, cardId: string, body: { title: string; description?: string; status?: string; ownerId?: string; assigned?: string[] }, token?: string | null) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks`, token, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-  return payload.task;
-}
-
 export async function updateTask(boardId: string, cardId: string, taskId: string, body: any, token?: string | null) {
   const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks/${encodeURIComponent(taskId)}`, token, {
     method: "PUT",

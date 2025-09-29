@@ -1,27 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card } from "@/types";
-import { useAuth } from "@/hooks/useAuth";
+import { useCallback, useEffect, useState } from "react";
 import * as api from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
+import type { Card } from "@/types";
 
-export function useCards(boardId?: string, pageSize = 10) {
+export function useCards(boardId?: string) {
   const { token, isAuthenticated } = useAuth();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
 
-  const fetchCards = useCallback(async () => {
+  const fetch = useCallback(async () => {
     if (!boardId || !isAuthenticated) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getCards(boardId, token);
-      // ensure createdAt is string
-      const normalized = data.map((c: any) => ({ ...c, createdAt: c.createdAt ? String(c.createdAt) : new Date().toISOString() }));
-      setCards(normalized);
-      setPage(1);
+      const res = await api.getCards(boardId, token);
+      setCards(res);
     } catch (err: any) {
       setError(err.message || "Failed to load cards");
     } finally {
@@ -30,59 +26,33 @@ export function useCards(boardId?: string, pageSize = 10) {
   }, [boardId, token, isAuthenticated]);
 
   useEffect(() => {
-    fetchCards();
-  }, [fetchCards]);
+    fetch();
+  }, [fetch]);
 
   const create = useCallback(
-    async (name: string, description?: string, status?: string) => {
+    async (payload: { name: string; description?: string; status?: string; priority?: string }) => {
       if (!boardId) throw new Error("boardId required");
-      // optimistic
-      const tempId = `temp-${Date.now()}`;
-      const temp: Card = {
-        id: tempId,
-        boardId,
-        name,
-        description,
-        status: status || "todo",
-        createdAt: new Date().toISOString(),
-      };
-      setCards((s) => [temp, ...s]);
+      setLoading(true);
       try {
-        const saved = await api.createCard(boardId, { name, description, status }, token);
-        setCards((s) => s.map((c) => (c.id === tempId ? saved : c)));
-        return saved;
-      } catch (err) {
-        setCards((s) => s.filter((c) => c.id !== tempId));
-        throw err;
+        const created = await api.createCard(boardId, payload, token);
+        setCards((s) => [created, ...s]);
+        return created;
+      } finally {
+        setLoading(false);
       }
     },
     [boardId, token]
   );
 
-  const remove = useCallback(
-    async (cardId: string) => {
-      if (!boardId) throw new Error("boardId required");
-      const prev = cards;
-      setCards((s) => s.filter((c) => c.id !== cardId));
-      try {
-        await api.deleteCard(boardId, cardId, token);
-      } catch (err) {
-        setCards(prev);
-        throw err;
-      }
-    },
-    [boardId, token, cards]
-  );
-
   const update = useCallback(
-    async (cardId: string, body: Partial<{ name: string; description?: string; status?: string; members?: string[] }>) => {
+    async (cardId: string, updates: Partial<Card>) => {
       if (!boardId) throw new Error("boardId required");
       const prev = cards;
-      setCards((s) => s.map((c) => (c.id === cardId ? { ...c, ...body, updatedAt: new Date().toISOString() } : c)));
+      setCards((s) => s.map((c) => (c.id === cardId ? { ...c, ...updates } : c)));
       try {
-        const saved = await api.updateCard(boardId, cardId, body, token);
-        setCards((s) => s.map((c) => (c.id === cardId ? saved : c)));
-        return saved;
+        const updated = await api.updateCard(boardId, cardId, updates, token);
+        setCards((s) => s.map((c) => (c.id === cardId ? updated : c)));
+        return updated;
       } catch (err) {
         setCards(prev);
         throw err;
@@ -91,22 +61,7 @@ export function useCards(boardId?: string, pageSize = 10) {
     [boardId, token, cards]
   );
 
-  const pages = Math.max(1, Math.ceil(cards.length / pageSize));
-  const visible = useMemo(() => cards.slice((page - 1) * pageSize, page * pageSize), [cards, page, pageSize]);
-
-  return {
-    cards,
-    visible,
-    loading,
-    error,
-    fetch: fetchCards,
-    create,
-    remove,
-    update,
-    page,
-    setPage,
-    pages,
-  };
+  return { cards, loading, error, fetch, create, update, setCards };
 }
 
 export default useCards;

@@ -17,7 +17,7 @@ const IconButton: FC<Props> = ({ icon, size = "md", variant = "ghost", className
     lg: "w-10 h-10",
   };
   const variants: Record<string, string> = {
-    ghost: "bg-transparent hover:bg-slate-100 text-slate-700",
+    ghost: "bg-transparent hover:bg-slate-100 text-slate-700 dark:text-slate-200 dark:hover:bg-slate-700",
     primary: "bg-blue-600 text-white hover:bg-blue-700",
   };
 

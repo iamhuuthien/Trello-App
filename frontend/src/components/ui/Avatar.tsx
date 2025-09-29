@@ -29,7 +29,14 @@ const Avatar: FC<Props> = ({ src, name, size = "md" }) => {
     // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={name} className={clsx("rounded-full object-cover", sizes[size])} />
   ) : (
-    <div className={clsx("rounded-full bg-slate-200 text-slate-700 inline-flex items-center justify-center", sizes[size])}>
+    <div
+      className={clsx(
+        "rounded-full inline-flex items-center justify-center font-semibold",
+        "bg-slate-100 text-slate-700",
+        "dark:bg-slate-700 dark:text-slate-100",
+        sizes[size]
+      )}
+    >
       {initials || "?"}
     </div>
   );

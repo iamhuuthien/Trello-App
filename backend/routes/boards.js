@@ -12,8 +12,8 @@ const router = express.Router();
 // Boards
 router.get("/", auth, boardsCtrl.listBoards);
 router.post("/", auth, body("title").isString().notEmpty(), boardsCtrl.createBoard);
-router.get("/:id", auth, boardsCtrl.getBoard);
-router.put("/:id", auth, boardsCtrl.updateBoard);
+router.get("/:id", boardsCtrl.getBoard);
+router.put("/:id", boardsCtrl.updateBoard);
 router.delete("/:id", auth, boardsCtrl.deleteBoard);
 
 // Cards

@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/context/ToastContext";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Avatar from "@/components/ui/Avatar";
+import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/hooks/useAuth";
 import { updateBoard, deleteBoard } from "@/services/api";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import { Edit2, Trash2, X, UserPlus } from "lucide-react";
 
 interface BoardHeaderProps {

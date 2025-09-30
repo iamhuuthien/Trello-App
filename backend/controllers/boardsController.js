@@ -26,10 +26,17 @@ async function createBoard(req, res) {
 async function getBoard(req, res) {
   try {
     const id = req.params.id;
-    const board = await boardService.findById(id);
-    if (!board) return res.status(404).json({ ok: false, message: "Board not found" });
-    // ensure columns exist
-    const out = { ...board, columns: board.columns && board.columns.length ? board.columns : boardService.DEFAULT_COLUMNS };
+    const boardRecord = await boardService.findById(id);
+    if (!boardRecord) return res.status(404).json({ ok: false, message: "Board not found" });
+
+    // boardRecord currently = { ref, data }
+    const data = boardRecord.data || {};
+    const boardId = boardRecord.ref && boardRecord.ref.id ? boardRecord.ref.id : id;
+
+    // ensure columns exist (use normalized data columns or default)
+    const columns = data.columns && data.columns.length ? data.columns : boardService.DEFAULT_COLUMNS;
+    const out = { id: boardId, ...data, columns };
+
     return res.json({ ok: true, board: out });
   } catch (err) {
     console.error(err);

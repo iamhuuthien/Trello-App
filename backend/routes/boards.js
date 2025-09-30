@@ -1,115 +1,42 @@
 const express = require("express");
-const admin = require("firebase-admin");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 const auth = require("../middleware/auth");
 
+const boardsCtrl = require("../controllers/boardsController");
+const cardsCtrl = require("../controllers/cardsController");
+const tasksCtrl = require("../controllers/tasksController");
+const invitesCtrl = require("../controllers/inviteController");
+
 const router = express.Router();
-const db = admin.firestore();
-const BOARDS = "boards";
 
-// GET /boards - list user's boards
-router.get("/", auth, async (req, res) => {
-  try {
-    // use ownerId format matching users docs
-    const ownerId = `user:${String(req.user.email).toLowerCase()}`;
-    const q = db.collection(BOARDS).where("ownerId", "==", ownerId);
-    const snap = await q.get();
-    const boards = [];
-    snap.forEach((d) => boards.push({ id: d.id, ...d.data() }));
-    res.json({ ok: true, boards });
-  } catch (err) {
-    console.error("boards list error:", err);
-    res.status(500).json({ error: "internal_error" });
-  }
-});
+// Boards
+router.get("/", auth, boardsCtrl.listBoards);
+router.post("/", auth, body("title").isString().notEmpty(), boardsCtrl.createBoard);
+router.get("/:id", boardsCtrl.getBoard);
+router.put("/:id", boardsCtrl.updateBoard);
+router.delete("/:id", auth, boardsCtrl.deleteBoard);
 
-// POST /boards { title }
-router.post(
-  "/",
-  auth,
-  body("title").isString().notEmpty(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+// Cards
+router.get("/:boardId/cards", auth, cardsCtrl.listCards);
+router.post("/:boardId/cards", auth, cardsCtrl.createCard);
+router.get("/:boardId/cards/:id", auth, cardsCtrl.getCard);
+router.put("/:boardId/cards/:id", auth, cardsCtrl.updateCard);
+router.delete("/:boardId/cards/:id", auth, cardsCtrl.deleteCard);
+router.get("/:boardId/cards/user/:user_id", auth, cardsCtrl.listCardsByUser);
 
-    try {
-      const ownerId = `user:${String(req.user.email).toLowerCase()}`;
-      const payload = {
-        title: req.body.title,
-        ownerId,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      };
-      const ref = await db.collection(BOARDS).add(payload);
-      const doc = await ref.get();
-      res.status(201).json({ ok: true, board: { id: ref.id, ...doc.data() } });
-    } catch (err) {
-      console.error("create board error:", err);
-      res.status(500).json({ error: "internal_error" });
-    }
-  }
-);
+// Tasks
+router.get("/:boardId/cards/:cardId/tasks", auth, tasksCtrl.listTasks);
+router.post("/:boardId/cards/:cardId/tasks", auth, tasksCtrl.createTask);
+router.get("/:boardId/cards/:cardId/tasks/:taskId", auth, tasksCtrl.getTask);
+router.put("/:boardId/cards/:cardId/tasks/:taskId", auth, tasksCtrl.updateTask);
+router.delete("/:boardId/cards/:cardId/tasks/:taskId", auth, tasksCtrl.deleteTask);
 
-// GET /boards/:id
-router.get("/:id", auth, async (req, res) => {
-  try {
-    const id = req.params.id;
-    const snap = await db.collection(BOARDS).doc(id).get();
-    if (!snap.exists) return res.status(404).json({ error: "not_found" });
-    const data = snap.data();
-    const ownerId = `user:${String(req.user.email).toLowerCase()}`;
-    if (data.ownerId !== ownerId) return res.status(403).json({ error: "forbidden" });
-    res.json({ ok: true, board: { id: snap.id, ...data } });
-  } catch (err) {
-    console.error("get board error:", err);
-    res.status(500).json({ error: "internal_error" });
-  }
-});
+// Assign/unassign
+router.post("/:boardId/cards/:cardId/tasks/:taskId/assign", auth, tasksCtrl.assign);
+router.delete("/:boardId/cards/:cardId/tasks/:taskId/assign", auth, tasksCtrl.removeAssign);
 
-// PUT /boards/:id
-router.put(
-  "/:id",
-  auth,
-  body("title").optional().isString(),
-  async (req, res) => {
-    try {
-      const id = req.params.id;
-      const ref = db.collection(BOARDS).doc(id);
-      const snap = await ref.get();
-      if (!snap.exists) return res.status(404).json({ error: "not_found" });
-      const data = snap.data();
-      const ownerId = `user:${String(req.user.email).toLowerCase()}`;
-      if (data.ownerId !== ownerId) return res.status(403).json({ error: "forbidden" });
-
-      await ref.update({
-        ...(req.body.title ? { title: req.body.title } : {}),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      const updated = await ref.get();
-      res.json({ ok: true, board: { id: updated.id, ...updated.data() } });
-    } catch (err) {
-      console.error("update board error:", err);
-      res.status(500).json({ error: "internal_error" });
-    }
-  }
-);
-
-// DELETE /boards/:id
-router.delete("/:id", auth, async (req, res) => {
-  try {
-    const id = req.params.id;
-    const ref = db.collection(BOARDS).doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) return res.status(404).json({ error: "not_found" });
-    const data = snap.data();
-    const ownerId = `user:${String(req.user.email).toLowerCase()}`;
-    if (data.ownerId !== ownerId) return res.status(403).json({ error: "forbidden" });
-
-    await ref.delete();
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("delete board error:", err);
-    res.status(500).json({ error: "internal_error" });
-  }
-});
+// Invites
+router.post("/:boardId/invite", auth, invitesCtrl.createInvite);
+router.post("/:boardId/cards/:cardId/invite/accept", auth, invitesCtrl.acceptInviteForCard);
 
 module.exports = router;

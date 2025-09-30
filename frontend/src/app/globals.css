@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* Biến màu mặc định (Light mode) */
+:root {
+  --background: #ffffff;
+  --foreground: #111827; /* gray-800 */
+  --muted: #6b7280; /* gray-500 */
+
+  --primary: #2563eb; /* blue-600 */
+  --primary-hover: #1d4ed8; /* blue-700 */
+
+  --secondary: #f3f4f6; /* gray-100 */
+  --secondary-hover: #e5e7eb; /* gray-200 */
+
+  --border: #e5e7eb; /* gray-200 */
+  --card: #ffffff;
+  --card-foreground: #111827; /* gray-900 */
+
+  --radius: 0.5rem; /* 8px border radius */
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827; /* gray-900 */
+    --foreground: #f9fafb; /* gray-50 */
+    --muted: #9ca3af; /* gray-400 */
+
+    --primary: #3b82f6; /* blue-500 */
+    --primary-hover: #2563eb; /* blue-600 */
+
+    --secondary: #1f2937; /* gray-800 */
+    --secondary-hover: #374151; /* gray-700 */
+
+    --border: #374151; /* gray-700 */
+    --card: #1f2937;
+    --card-foreground: #f9fafb;
+  }
+}
+
+/* Apply global */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  line-height: 1.5;
+}
+
+/* Ensure form controls and buttons have good contrast on white backgrounds */
+input,
+textarea,
+select {
+  color: var(--foreground) !important;
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted) !important;
+}
+
+/* Buttons fallback styles for any places not using the Button component */
+button {
+  color: var(--foreground);
+  background-color: transparent;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  padding: 0.5rem 0.75rem;
+}
+
+/* utility classes used in some components: .btn-primary, .btn-secondary */
+.btn-primary {
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary);
+}
+.btn-primary:hover { background-color: var(--primary-hover); }
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+/* small helper utilities to force readable foreground on white cards (apply locally) */
+.force-foreground { color: #0f172a !important; } /* slate-900 */
+.force-text-muted { color: #475569 !important; } /* slate-600 */
+.force-bg-white { background-color: #ffffff !important; }

@@ -1,72 +1,87 @@
 // components/layout/Navbar.tsx
 "use client";
 
-import { FC, useState, useRef, useEffect } from "react";
-import { Menu, Search, Bell, Plus, LogOut, User, Sun } from "lucide-react";
-import IconButton from "../ui/IconButton";
-import Avatar from "../ui/Avatar";
-import { useAuth } from "@/context/AuthContext";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Menu, Search, Plus, Bell, Sun } from "lucide-react";
 import UserMenu from "./UserMenu";
 
 interface Props {
   onMenuToggle?: () => void;
+  collapsed?: boolean;
+  // onCollapseToggle removed — sidebar handles collapse only
 }
 
-const Navbar: FC<Props> = ({ onMenuToggle }) => {
-  const [open, setOpen] = useState(false);
-  const { user } = useAuth();
-  const router = useRouter();
+export default function Navbar({ onMenuToggle, collapsed = false }: Props) {
+  const NAV_HEIGHT = 56;
 
   return (
-    <header className="h-14 w-full flex items-center justify-between px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
-      <div className="flex items-center gap-3">
-        <button
-          aria-label="Open menu"
-          onClick={onMenuToggle}
-          className="md:hidden p-2 rounded-md bg-white/12 hover:bg-white/20 transition"
-        >
-          <Menu className="w-5 h-5 text-white" />
-        </button>
+    <header
+      className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/80 backdrop-blur-sm border-b border-slate-200"
+      style={{ height: NAV_HEIGHT }}
+    >
+      <div className={`h-full px-4 flex items-center gap-4`}>
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onMenuToggle}
+            aria-label="Toggle sidebar (mobile)"
+            className="p-2 rounded-md bg-white shadow-sm hover:shadow-md transition md:hidden"
+          >
+            <Menu className="w-5 h-5 text-slate-700" />
+          </button>
 
-        <div className="hidden sm:flex items-center gap-3 bg-white/10 rounded-full px-3 py-1">
-          <Search className="w-4 h-4 text-white/80" />
-          <input
-            aria-label="Search"
-            placeholder="Search boards, cards..."
-            className="bg-transparent placeholder-white/70 text-white text-sm focus:outline-none"
-            type="search"
-          />
+          <Link href="/" aria-label="TrelloApp home" className="flex items-center gap-2 min-w-0">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm flex-shrink-0"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#8b5cf6)" }}
+              aria-hidden
+            >
+              <span className="text-sm leading-none">TA</span>
+            </div>
+
+            <div className="hidden sm:flex flex-col min-w-0">
+              <span className="text-sm font-semibold text-slate-900 truncate leading-tight">TrelloApp</span>
+              <span className="text-xs text-slate-400 truncate leading-tight">Workspace</span>
+            </div>
+          </Link>
         </div>
-      </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          aria-label="Toggle theme"
-          className="p-2 rounded-md bg-white/12 hover:bg-white/20 transition"
-          title="Toggle theme"
-        >
-          <Sun className="w-5 h-5 text-white" />
-        </button>
+        <div className="flex-1 flex justify-center">
+          <div className="hidden md:flex items-center w-full max-w-[560px] justify-center">
+            <div className="flex items-center w-full max-w-[520px] bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
+              <Search className="w-4 h-4 text-slate-400" />
+              <input
+                aria-label="Search"
+                placeholder="Search boards, cards, members..."
+                className="ml-3 w-full bg-transparent text-sm placeholder-slate-400 focus:outline-none"
+                type="search"
+              />
+            </div>
+          </div>
+        </div>
 
-        <Link
-          href="/boards/new"
-          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white text-indigo-600 font-medium hover:opacity-95 shadow-sm transition"
-          title="Create new board"
-        >
-          <Plus className="w-4 h-4" /> New
-        </Link>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            title="Create new board"
+            className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-medium shadow"
+            onClick={() => (window.location.href = "/boards/new")}
+          >
+            <Plus className="w-4 h-4" /> New
+          </button>
 
-        <div className="relative">
-          {/* keep UserMenu for accessible dropdown; wrap avatar with stronger contrast */}
-          <div className="p-1 rounded-md bg-white/12 hover:bg-white/20 transition">
+          <button title="Notifications" className="p-2 rounded-full bg-white shadow-sm hover:shadow-md">
+            <Bell className="w-5 h-5 text-slate-700" />
+          </button>
+
+          <button title="Toggle theme" className="p-2 rounded-full bg-white shadow-sm hover:shadow-md hidden sm:inline-flex">
+            <Sun className="w-5 h-5 text-slate-700" />
+          </button>
+
+          <div className="flex items-center">
             <UserMenu />
           </div>
         </div>
       </div>
     </header>
   );
-};
-
-export default Navbar;
+}

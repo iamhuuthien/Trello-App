@@ -60,7 +60,7 @@ export default function HomePage() {
             <div className="text-sm text-slate-500 mt-1">Start a new board</div>
           </Link>
 
-          <button
+          {/* <button
             onClick={() => {
               logout();
               router.replace("/login");
@@ -69,7 +69,7 @@ export default function HomePage() {
           >
             <div className="font-medium text-red-600">Sign out</div>
             <div className="text-sm text-slate-500 mt-1">Sign out from the app</div>
-          </button>
+          </button> */}
         </div>
       </div>
     </main>

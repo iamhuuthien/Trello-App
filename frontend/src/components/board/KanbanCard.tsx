@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { deleteCard } from "@/services/api";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { Edit2, Trash2 } from "lucide-react";
 
 interface KanbanCardProps {
   boardId: string;
@@ -102,12 +103,12 @@ export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete }
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="text-slate-700">
-              Edit
+            <Button variant="secondary" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="inline-flex items-center gap-2">
+              <Edit2 className="w-4 h-4 text-slate-700" /> Edit
             </Button>
 
-            <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setShowDeleteModal(true); }} disabled={localDeleting} className="text-slate-700">
-              {localDeleting ? <><LoadingSpinner size={14} className="inline-block mr-2" /> Deleting...</> : "Delete"}
+            <Button variant="danger" onClick={(e) => { e.stopPropagation(); setShowDeleteModal(true); }} disabled={localDeleting} className="inline-flex items-center gap-2">
+              {localDeleting ? <><LoadingSpinner size={14} className="inline-block mr-2" /> Deleting...</> : <><Trash2 className="w-4 h-4" /> Delete</>}
             </Button>
           </div>
         </div>

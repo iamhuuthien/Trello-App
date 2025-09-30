@@ -101,3 +101,41 @@ button {
 .force-foreground { color: #0f172a !important; } /* slate-900 */
 .force-text-muted { color: #475569 !important; } /* slate-600 */
 .force-bg-white { background-color: #ffffff !important; }
+
+/* interactive cursor hints + drag handle helpers */
+button, a, input[type="button"], input[type="submit"], .interactive {
+  cursor: pointer;
+}
+
+/* drag handles */
+.draggable-handle {
+  cursor: grab;
+  -webkit-user-drag: none;
+  touch-action: none;
+}
+.draggable-handle:active,
+.draggable-handle.dragging {
+  cursor: grabbing;
+}
+
+/* draggable element (visual hint) */
+.draggable {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.draggable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+/* subtle hover for cards/columns */
+.card-hoverable:hover,
+.column-hoverable:hover {
+  background-color: #fbfdff;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.04);
+}
+
+/* ensure grabbing cursor when global dragging state applied */
+[data-dndkit-dragging="true"] .draggable,
+[data-dndkit-dragging="true"] .draggable-handle {
+  cursor: grabbing !important;
+}

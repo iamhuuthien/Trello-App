@@ -2,7 +2,7 @@
 
 import React, { FC, ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "success" | "accent";
 type Size = "sm" | "md" | "lg";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,13 +28,17 @@ const Button: FC<Props> = ({
 
   const variants: Record<Variant, string> = {
     primary:
-      "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 focus:ring-indigo-500",
+      "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 focus:ring-indigo-500 hover:shadow-md",
     secondary:
-      "bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 focus:ring-slate-400",
+      "bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 focus:ring-slate-400 hover:shadow-sm",
     ghost:
       "bg-transparent text-slate-700 hover:bg-slate-100 focus:ring-slate-300",
     danger:
-      "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400",
+      "bg-red-600 text-white hover:bg-red-700 focus:ring-red-400 hover:shadow",
+    success:
+      "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400 hover:shadow",
+    accent:
+      "bg-violet-500 text-white hover:bg-violet-600 focus:ring-violet-400 hover:shadow-md",
   };
 
   return (

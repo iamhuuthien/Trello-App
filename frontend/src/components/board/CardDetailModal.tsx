@@ -10,6 +10,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/hooks/useAuth";
 import useTasks from "@/hooks/useTasks";
 import { createTask, assignMember, updateTask, deleteTask } from "@/services/api";
+import { Edit2, Trash2, Check } from "lucide-react";
 
 export default function CardDetailModal({ boardId, card, isOpen, onClose, onTaskCreated }: any) {
   const { token } = useAuth();
@@ -173,17 +174,14 @@ export default function CardDetailModal({ boardId, card, isOpen, onClose, onTask
                         onChange={(e) => setAssignInputs((s) => ({ ...s, [t.id]: e.target.value }))}
                         className="text-slate-900"
                       />
-                      <Button size="sm" onClick={() => handleAssign(t.id)}>Assign</Button>
+                      <Button size="sm" variant="success" onClick={() => handleAssign(t.id)}><Check className="w-4 h-4 mr-2" />Assign</Button>
                     </div>
 
                     <div className="flex gap-2 justify-end">
-                      <Button variant="ghost" size="sm" onClick={() => {
-                        // quick edit task title inline could be added later
-                        toast.show("Edit task not implemented", "info");
-                      }}>
-                        Edit
+                      <Button variant="secondary" size="sm" onClick={() => { toast.show("Edit task not implemented", "info"); }}>
+                        <Edit2 className="w-4 h-4 mr-2" /> Edit
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleDeleteTask(t.id)}>Delete</Button>
+                      <Button variant="danger" size="sm" onClick={() => handleDeleteTask(t.id)}><Trash2 className="w-4 h-4 mr-2" /> Delete</Button>
                     </div>
                   </div>
                 </div>
@@ -209,7 +207,7 @@ export default function CardDetailModal({ boardId, card, isOpen, onClose, onTask
                   className="text-slate-900"
                 />
                 <div className="flex gap-2">
-                  <Button type="submit" disabled={creating}>{creating ? "Creating..." : "Create task"}</Button>
+                  <Button type="submit" variant="primary" disabled={creating}>{creating ? "Creating..." : "Create task"}</Button>
                   <Button variant="ghost" onClick={() => { setTitle(""); setDescription(""); }}>Clear</Button>
                 </div>
               </form>

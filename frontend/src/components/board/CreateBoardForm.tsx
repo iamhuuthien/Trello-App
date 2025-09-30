@@ -79,7 +79,7 @@ export default function CreateBoardForm() {
           <Button variant="secondary" onClick={() => router.back()} disabled={loading}>
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button variant="primary" type="submit" disabled={loading}>
             {loading ? <><LoadingSpinner size={16} className="inline-block mr-2" /> Creating...</> : "Create Board"}
           </Button>
         </div>

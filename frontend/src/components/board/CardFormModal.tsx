@@ -95,7 +95,7 @@ export default function CardFormModal({
 
           <div className="flex justify-end gap-2 mt-2">
             <Button variant="secondary" onClick={onClose} type="button">Cancel</Button>
-            <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
+            <Button variant="primary" type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </div>

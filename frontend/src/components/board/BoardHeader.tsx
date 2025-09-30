@@ -144,7 +144,7 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
               <Button variant="secondary" onClick={() => { setIsEditing(false); skipNextAuto.current = true; }}>
                 Cancel
               </Button>
-              <Button onClick={() => { doSave(); setIsEditing(false); }} disabled={saving}>
+              <Button variant="primary" onClick={() => { doSave(); setIsEditing(false); }} disabled={saving}>
                 {saving ? <><LoadingSpinner size={16} className="inline-block mr-2" /> Saving...</> : "Save"}
               </Button>
             </div>
@@ -158,46 +158,48 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
             </div>
             {board.description && <p className="text-sm text-slate-700 mt-1">{board.description}</p>}
 
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex items-center gap-3">
               <Button
-                variant="ghost"
+                variant="secondary"
                 onClick={() => setIsEditing(true)}
-                className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-950"
+                title="Edit board"
+                className="inline-flex items-center gap-2"
               >
-                <Edit2 className="w-4 h-4 mr-2" /> Edit
+                <Edit2 className="w-4 h-4" /> Edit
               </Button>
 
               <Button
-                variant="ghost"
+                variant="danger"
                 onClick={() => setShowDeleteModal(true)}
-                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                title="Delete board"
+                className="inline-flex items-center gap-2"
               >
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                <Trash2 className="w-4 h-4" /> Delete
               </Button>
+
+              {/* <div className="ml-4 flex items-center gap-2">
+                <Input
+                  placeholder="user@example.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-64 text-slate-900 bg-white"
+                />
+                <Button variant="accent" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+                  {inviting ? <><LoadingSpinner size={14} className="inline-block mr-2" /> Sending...</> : <><UserPlus className="w-4 h-4 mr-2" /> Invite</>}
+                </Button>
+              </div> */}
             </div>
           </>
         )}
 
         <div className="mt-4 flex items-center gap-3">
+          {/* owner avatars / meta */}
           <div className="flex -space-x-2">
             {members.slice(0, 6).map((m: any, idx: number) => {
               const email = memberEmailFromId(m);
               return <div key={idx} className="border-2 border-white rounded-full"><Avatar name={email || undefined} size="sm" /></div>;
             })}
             {members.length > 6 && <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600">+{members.length - 6}</div>}
-          </div>
-
-          <div className="ml-4 flex items-center gap-2">
-            <Input
-              className="w-64 text-slate-900 bg-white"
-              label="Invite member (email)"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="user@example.com"
-            />
-            <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
-              {inviting ? <><LoadingSpinner size={14} className="inline-block mr-2" /> Sending...</> : <><UserPlus className="w-4 h-4 mr-2" /> Invite</>}
-            </Button>
           </div>
         </div>
       </div>

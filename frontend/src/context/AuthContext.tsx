@@ -12,31 +12,34 @@ interface AuthContextType {
   signup: (email: string) => Promise<{ ok: boolean; previewUrl?: string }>;
   signin: (email: string, code: string) => Promise<{ ok: boolean; token?: string; error?: string }>;
   logout: () => void;
+  updateProfile?: (payload: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
+  // Start with null on both server and client to keep SSR output stable
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
+  // After mount, hydrate from localStorage (client-only)
+  useEffect(() => {
     try {
       const raw = localStorage.getItem("trello_user");
-      return raw ? (JSON.parse(raw) as User) : null;
-    } catch {
-      return null;
+      if (raw) {
+        setUser(JSON.parse(raw) as User);
+      }
+      const savedToken = localStorage.getItem("trello_token");
+      if (savedToken) setToken(savedToken);
+    } catch (err) {
+      // ignore
     }
-  });
-  const [token, setToken] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem("trello_token");
-    } catch {
-      return null;
-    }
-  });
+  }, []);
 
   const isAuthenticated = !!token && !!user;
 
+  // persist token/user when they change (client-only)
   useEffect(() => {
-    // persist
     try {
       if (token) localStorage.setItem("trello_token", token);
       else localStorage.removeItem("trello_token");
@@ -78,6 +81,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const t = body.token as string | undefined;
     if (t) {
       setToken(t);
+      // keep minimal user shape; real profile should come from API when needed
       setUser({ email, name: email.split("@")[0] });
       return { ok: true, token: t };
     }
@@ -89,8 +93,14 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setUser(null);
   };
 
+  // optional updateProfile placeholder (components call updateProfile via useAuth)
+  const updateProfile = async (payload: Partial<User>) => {
+    setUser((prev) => ({ ...(prev ?? {}), ...payload } as User));
+    // if you have backend endpoint, call it here
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, signup, signin, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, signup, signin, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

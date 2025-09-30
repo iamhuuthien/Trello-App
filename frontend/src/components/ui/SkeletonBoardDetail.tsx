@@ -1,16 +1,51 @@
 "use client";
 
 import React, { FC } from "react";
+import clsx from "clsx";
 
-const SkeletonBoardDetail: FC = () => {
+interface SkeletonBoardDetailProps {
+  columns?: number;
+  cardsPerCol?: number;
+  className?: string;
+  rounded?: "sm" | "md" | "lg";
+}
+
+const SkeletonBoardDetail: FC<SkeletonBoardDetailProps> = ({
+  columns = 3,
+  cardsPerCol = 3,
+  className = "",
+  rounded = "md",
+}) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="bg-white/5 rounded-md p-4 space-y-3 animate-pulse dark:bg-slate-800">
-          <div className="h-6 w-2/3 bg-slate-200/60 rounded dark:bg-slate-700"></div>
+    <div
+      className={clsx(
+        "grid grid-cols-1 sm:grid-cols-3 gap-4",
+        className
+      )}
+      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+    >
+      {Array.from({ length: columns }).map((_, i) => (
+        <div
+          key={i}
+          className={clsx(
+            "p-4 space-y-3 animate-pulse bg-white/5 dark:bg-slate-800",
+            {
+              "rounded-sm": rounded === "sm",
+              "rounded-md": rounded === "md",
+              "rounded-lg": rounded === "lg",
+            }
+          )}
+        >
+          {/* Column Title */}
+          <div className="h-6 w-2/3 rounded bg-gradient-to-r from-slate-200/50 via-slate-300/60 to-slate-200/50 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700"></div>
+
+          {/* Cards */}
           <div className="space-y-3">
-            {[0, 1, 2].map((j) => (
-              <div key={j} className="h-14 bg-slate-200/50 rounded dark:bg-slate-700"></div>
+            {Array.from({ length: cardsPerCol }).map((_, j) => (
+              <div
+                key={j}
+                className="h-14 rounded bg-gradient-to-r from-slate-200/50 via-slate-300/60 to-slate-200/50 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700"
+              ></div>
             ))}
           </div>
         </div>

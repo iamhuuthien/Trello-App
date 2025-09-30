@@ -1,46 +1,39 @@
-"use client";
+import React from "react";
+import Card, { CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/Card";
+import { Calendar, Users } from "lucide-react";
 
-import { FC } from "react";
-import Card from "../ui/Card";
-import Avatar from "../ui/Avatar";
-import { LayoutDashboard } from "lucide-react";
-
-interface Props {
+interface BoardCardProps {
   title: string;
   description?: string;
-  members?: { name: string; src?: string }[];
+  memberCount?: number;
+  updatedAt?: string;
   onClick?: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
 }
 
-const BoardCard: FC<Props> = ({ title, description, members = [], onClick, onEdit, onDelete }) => {
+export default function BoardCard({ title, description, memberCount = 0, updatedAt, onClick }: BoardCardProps) {
   return (
-    <Card className="p-4 cursor-pointer hover:shadow-md relative" onClick={onClick}>
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <LayoutDashboard className="w-5 h-5 text-blue-600" />
-            <h4 className="font-semibold">{title}</h4>
-          </div>
-          {description && <p className="text-sm text-slate-500 mt-2">{description}</p>}
+    <Card 
+      className="cursor-pointer hover:border-blue-400 transition-colors" 
+      onClick={onClick}
+    >
+      <CardHeader className="pb-2">
+        <CardTitle>{title || "Untitled Board"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {description && <p className="text-sm text-gray-500">{description}</p>}
+      </CardContent>
+      <CardFooter className="flex justify-between text-xs text-gray-500">
+        <div className="flex items-center gap-1">
+          <Users size={14} />
+          <span>{memberCount}</span>
         </div>
-
-        <div className="flex flex-col gap-2">
-          {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="text-xs text-blue-600">Edit</button>}
-          {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-xs text-red-600">Delete</button>}
-        </div>
-      </div>
-
-      <div className="flex -space-x-2 mt-3">
-        {members.slice(0, 4).map((m, i) => (
-          <div key={i} title={m.name} className="border-2 border-white rounded-full">
-            <Avatar name={m.name} src={m.src} size="sm" />
+        {updatedAt && (
+          <div className="flex items-center gap-1">
+            <Calendar size={14} />
+            <span>{new Date(updatedAt).toLocaleDateString()}</span>
           </div>
-        ))}
-      </div>
+        )}
+      </CardFooter>
     </Card>
   );
-};
-
-export default BoardCard;
+}

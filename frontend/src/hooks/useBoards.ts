@@ -1,53 +1,40 @@
-import { useEffect, useState, useCallback } from "react";
-import { Board } from "@/types";
-import { useAuth } from "@/context/AuthContext";
-import * as api from "@/services/api";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { getBoards } from "../services/api";
 
 export function useBoards() {
   const { token, isAuthenticated } = useAuth();
-  const [boards, setBoards] = useState<Board[]>([]);
+  const [boards, setBoards] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBoards = useCallback(async () => {
-    if (!isAuthenticated) {
-      setBoards([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await api.getBoards(token);
-      setBoards(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load boards");
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!isAuthenticated) {
+        setBoards([]);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getBoards(token);
+        if (mounted) setBoards(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        if (mounted) setError(err.message || "Failed to load boards");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
   }, [token, isAuthenticated]);
 
-  useEffect(() => {
-    fetchBoards();
-  }, [fetchBoards]);
-
-  const create = useCallback(
-    async (title: string) => {
-      setLoading(true);
-      try {
-        const board = await api.createBoard(title, token);
-        setBoards((s) => [board, ...s]);
-        return board;
-      } catch (err: any) {
-        setError(err.message || "Create board failed");
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [token]
-  );
-
-  return { boards, loading, error, refresh: fetchBoards, create };
+  return { boards, setBoards, loading, error };
 }
 
 export default useBoards;

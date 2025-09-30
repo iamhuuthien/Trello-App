@@ -1,94 +1,63 @@
-"use client";
-
-import { FC, useMemo, useState, useCallback } from "react";
-import { DndContext, DragEndEvent, DragStartEvent, DragOverlay } from "@dnd-kit/core";
+import React, { useMemo } from "react";
+import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import KanbanColumn from "./KanbanColumn";
-import TaskCard from "./TaskCard";
-import { useCards } from "@/hooks/useCards";
-import type { Board, Card } from "@/types";
 
-const COLUMNS = [
-  { id: "todo", title: "To Do" },
-  { id: "doing", title: "In Progress" },
-  { id: "review", title: "Review" },
-  { id: "done", title: "Done" },
-];
+interface KanbanBoardProps {
+  boardId: string;
+  columns: Array<{ id: string; title?: string }>;
+  cards: any[];
+  onCardsChange: (cards: any[]) => void;
+}
 
-interface Props { board: Board; }
-
-const KanbanBoard: FC<Props> = ({ board }) => {
-  const { cards, loading, create, update } = useCards(board.id);
-  const [activeCard, setActiveCard] = useState<Card | null>(null);
-
-  const grouped = useMemo(() => {
-    const out: Record<string, Card[]> = {};
-    COLUMNS.forEach(c => out[c.id] = []);
+export default function KanbanBoard({ boardId, columns, cards, onCardsChange }: KanbanBoardProps) {
+  const sensors = useSensors(useSensor(PointerSensor));
+  const cardsByColumn = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    columns.forEach(c => (map[c.id] = []));
     cards.forEach(card => {
-      const s = card.status || "todo";
-      if (!out[s]) out[s] = [];
-      out[s].push(card);
+      const col = card.status ?? columns[0]?.id;
+      if (!map[col]) map[col] = [];
+      map[col].push(card);
     });
-    return out;
-  }, [cards]);
+    return map;
+  }, [columns, cards]);
 
-  const handleDragStart = (e: DragStartEvent) => {
-    const id = e.active.id as string;
-    const c = cards.find(x => x.id === id);
-    if (c) setActiveCard(c);
-  };
-
-  const handleDragEnd = useCallback(async (e: DragEndEvent) => {
-    const { active, over } = e;
-    setActiveCard(null);
-    if (!over) return;
-    const cardId = active.id as string;
-    const newStatus = over.id as string;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!active || !over) return;
+    const cardId = String(active.id);
+    const destColumnId = String(over.id);
     const card = cards.find(c => c.id === cardId);
-    if (!card || card.status === newStatus) return;
-    try {
-      await update(cardId, { status: newStatus });
-    } catch (err) {
-      console.error("move failed", err);
-    }
-  }, [cards, update]);
+    if (!card) return;
+    if (card.status === destColumnId) return;
 
-  const handleAdd = async (status: string) => {
-    const name = window.prompt("Task title");
-    if (!name) return;
-    await create({ name, status });
+    // optimistic UI only
+    const updated = cards.map(c => (c.id === cardId ? { ...c, status: destColumnId } : c));
+    onCardsChange(updated);
   };
-
-  if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          {/* explicit colors so title is visible in light & dark */}
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{board.title}</h1>
-          {board.description && <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{board.description}</p>}
-        </div>
-      </header>
+    <div className="overflow-x-auto pb-6">
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="flex gap-4" style={{ minWidth: columns.length * 300 }}>
+          {columns.map(column => (
+            <div key={column.id} className="w-80 flex-shrink-0">
+              <div className="bg-white rounded-md p-2 h-full border border-slate-100">
+                <div className="flex justify-between items-center mb-3 px-2">
+                  <h3 className="font-semibold text-sm text-slate-900">{column.title ?? column.id}</h3>
+                </div>
 
-      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex gap-6 overflow-x-auto">
-          {COLUMNS.map(col => (
-            <KanbanColumn
-              key={col.id}
-              id={col.id}
-              title={col.title}
-              cards={grouped[col.id] || []}
-              onAdd={() => handleAdd(col.id)}
-            />
+                <KanbanColumn
+                  boardId={boardId}
+                  columnId={column.id}
+                  cards={cardsByColumn[column.id] || []}
+                  onCardsChange={onCardsChange}
+                />
+              </div>
+            </div>
           ))}
         </div>
-
-        <DragOverlay>
-          {activeCard && <TaskCard card={activeCard} isDragging />}
-        </DragOverlay>
       </DndContext>
     </div>
   );
-};
-
-export default KanbanBoard;
+}

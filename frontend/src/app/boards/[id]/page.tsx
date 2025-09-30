@@ -1,11 +1,80 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import useBoard from "@/hooks/useBoard";
-import BoardBoard from "@/components/board/BoardBoard";
-import BoardClient from "@/components/board/BoardPageClient";
+import useCards from "@/hooks/useCards";
+import BoardHeader from "@/components/board/BoardHeader";
+import KanbanBoard from "@/components/board/KanbanBoard";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-export default function BoardPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
-  const unwrappedParams = React.use(params as any);
-  return <BoardClient boardId={unwrappedParams.id} />;
+interface Props {
+  params: any; // params can be a Promise in this Next.js version
+}
+
+export default function BoardPage({ params }: Props) {
+  const [id, setId] = useState<string | undefined>(undefined);
+  // safely unwrap params which may be a Promise
+  useEffect(() => {
+    let mounted = true;
+    Promise.resolve(params)
+      .then((p) => {
+        if (mounted) setId(p?.id);
+      })
+      .catch(() => {
+        if (mounted) setId(undefined);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
+
+  const router = useRouter();
+  const { board, loading: boardLoading, error: boardError } = useBoard(id);
+  const { cards, setCards, loading: cardsLoading, error: cardsError } = useCards(id);
+
+  if (!id || boardLoading || cardsLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <LoadingSpinner size={28} />
+      </div>
+    );
+  }
+
+  if (boardError) {
+    return (
+      <div className="p-6">
+        <div className="text-red-600">Failed to load board: {boardError}</div>
+      </div>
+    );
+  }
+
+  if (!board) {
+    return (
+      <div className="p-6">
+        <div className="text-slate-600">Board not found or you don't have access.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="mb-4">
+        <button onClick={() => router.push("/boards")} className="text-blue-600 hover:underline">
+          ← Back to Boards
+        </button>
+      </div>
+
+      <BoardHeader board={board} onBoardUpdate={() => { /* update handled via hook if needed */ }} />
+
+      <div className="mt-4">
+        <KanbanBoard
+          boardId={id}
+          columns={board.columns ?? []}
+          cards={cards}
+          onCardsChange={(updated) => setCards(updated)}
+        />
+      </div>
+    </div>
+  );
 }

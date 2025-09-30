@@ -1,60 +1,63 @@
 "use client";
 
+import React from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import BoardCard from "@/components/board/BoardCard";
 import useBoards from "@/hooks/useBoards";
-import Button from "@/components/ui/Button";
+import BoardCard from "@/components/board/BoardCard";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function BoardsPage() {
-  const { boards, loading, error, create, refresh } = useBoards();
   const router = useRouter();
-  const [creating, setCreating] = useState(false);
-
-  const handleCreate = async () => {
-    const title = window.prompt("Board title");
-    if (!title) return;
-    setCreating(true);
-    try {
-      const b = await create(title);
-      // navigate to board detail when created (if you implement detail route)
-      router.push(`/boards/${b.id}`);
-    } catch (err) {
-      alert((err as Error).message || "Failed to create");
-    } finally {
-      setCreating(false);
-    }
-  };
+  const { boards, loading, error } = useBoards();
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Boards</h2>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => refresh()}>
-            Refresh
-          </Button>
-          <Button onClick={handleCreate} disabled={creating}>
-            {creating ? "Creating..." : "New board"}
-          </Button>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold">Boards</h2>
+        <div>
+          <button
+            onClick={() => router.push("/boards/new")}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700"
+          >
+            New board
+          </button>
         </div>
       </div>
 
-      {loading && <div>Loading...</div>}
-      {error && <div className="text-red-600">{error}</div>}
+      {loading && (
+        <div className="flex items-center justify-center py-10">
+          <LoadingSpinner size={28} />
+        </div>
+      )}
 
-      {!loading && boards.length === 0 && <div className="card p-6">No boards yet. Create one.</div>}
+      {!loading && error && <div className="text-red-600">Failed to load boards: {error}</div>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {boards.map((b) => (
-          <BoardCard
-            key={b.id}
-            title={b.title}
-            description={`Created: ${new Date(b.createdAt).toLocaleString()}`}
-            onClick={() => router.push(`/boards/${b.id}`)}
-          />
-        ))}
-      </div>
+      {!loading && !error && boards.length === 0 && (
+        <div className="rounded-md border p-6 text-center">
+          <p className="mb-4">No boards yet.</p>
+          <button onClick={() => router.push("/boards/new")} className="px-3 py-2 rounded-md bg-sky-600 text-white">
+            Create first board
+          </button>
+        </div>
+      )}
+
+      {!loading && boards.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {boards.map((b: any) => {
+            const id = b.id ?? b._id ?? b?.ref?._path?.segments?.[1];
+            return (
+              <div key={id} onClick={() => router.push(`/boards/${encodeURIComponent(id)}`)} className="cursor-pointer">
+                <BoardCard
+                  title={b.title ?? b.name ?? "Untitled Board"}
+                  description={b.description ?? b.data?.description ?? ""}
+                  memberCount={Array.isArray(b.members) ? b.members.length : 0}
+                  updatedAt={b.updatedAt ?? b.data?.updatedAt}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

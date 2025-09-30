@@ -1,22 +1,59 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001";
 
+function getStoredToken(): string | null {
+  if (typeof window !== "undefined") {
+    // check both keys: older code uses "trello_token", helper uses "token"
+    return (
+      window.localStorage.getItem("token") ||
+      window.localStorage.getItem("trello_token") ||
+      null
+    );
+  }
+  return process.env.NEXT_PUBLIC_API_TOKEN || null;
+}
+
+/**
+ * fetch helper:
+ * - token === undefined => try read stored token (localStorage or NEXT_PUBLIC_API_TOKEN)
+ * - token === null => explicitly do NOT send Authorization
+ * - token (string) => use provided token
+ */
 async function fetchWithAuth(path: string, token?: string | null, opts: RequestInit = {}) {
+  const resolvedToken = token === undefined ? getStoredToken() : token;
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(opts.headers as Record<string, string> | undefined),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (resolvedToken) headers["Authorization"] = `Bearer ${resolvedToken}`;
 
   const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   const text = await res.text().catch(() => "");
   let json: any = {};
   try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
   if (!res.ok) {
-    const err = new Error(json?.message || json?.error || "API error");
+    const err = new Error(json?.message || json?.error || json?.error_description || "API error");
     (err as any).payload = json;
     throw err;
   }
   return json;
+}
+
+// helpers to manage token from UI
+export function setAuthToken(token?: string | null) {
+  if (typeof window === "undefined") return;
+  if (token) {
+    // keep both keys in sync so different pages/components work
+    window.localStorage.setItem("token", token);
+    window.localStorage.setItem("trello_token", token);
+  } else {
+    window.localStorage.removeItem("token");
+    window.localStorage.removeItem("trello_token");
+  }
+}
+
+export function getAuthToken() {
+  return getStoredToken();
 }
 
 export async function getBoards(token?: string | null) {
@@ -73,16 +110,20 @@ export async function createBoard(title: string, token?: string | null, descript
 }
 
 export async function updateBoard(id: string, body: any, token?: string | null) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(id)}`, token, {
+  const res = await fetchWithAuth(`/boards/${encodeURIComponent(id)}`, token, {
     method: "PUT",
     body: JSON.stringify(body),
   });
-  return payload.board;
+  // normalize response: backend returns { ok: true, board: {...} }
+  return res.board ?? res;
 }
 
 export async function deleteBoard(id: string, token?: string | null) {
-  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(id)}`, token, { method: "DELETE" });
-  return payload;
+  const res = await fetchWithAuth(`/boards/${encodeURIComponent(id)}`, token, {
+    method: "DELETE",
+  });
+  // return boolean-like or payload for caller
+  return res;
 }
 
 /* Cards (spec uses field `name`) */

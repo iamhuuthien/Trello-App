@@ -1,16 +1,24 @@
 export interface User {
-  name: string;
+  id: string;
   email?: string;
+  name?: string;
+  avatar?: string;
+}
+
+export interface Column {
+  id: string;
+  title: string;
 }
 
 export interface Board {
   id: string;
   title: string;
-  ownerId: string;
-  createdAt: string;
-  updatedAt?: string;
   description?: string;
-  members?: string[];
+  ownerId?: string;
+  members?: string[] | { id: string; name?: string }[];
+  columns?: Column[];
+  createdAt?: string | number;
+  updatedAt?: string | number;
 }
 
 export interface Card {
@@ -18,12 +26,11 @@ export interface Card {
   boardId?: string;
   name: string;
   description?: string;
-  status?: string; // todo / doing / done
+  status?: string; // column id
   members?: string[];
-  priority?: string;
-  deadline?: string | null;
-  createdAt: string;
-  updatedAt?: string;
+  deadline?: string | number;
+  createdAt?: string | number;
+  updatedAt?: string | number;
 }
 
 export interface Task {
@@ -31,11 +38,10 @@ export interface Task {
   cardId?: string;
   title: string;
   description?: string;
-  status?: string;
   ownerId?: string;
-  assigned?: string[]; // user ids
-  createdAt: string;
-  updatedAt?: string;
+  assigned?: string[];
+  createdAt?: string | number;
+  updatedAt?: string | number;
 }
 
 export interface Invite {

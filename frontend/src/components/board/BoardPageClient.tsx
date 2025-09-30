@@ -1,67 +1,87 @@
-"use client";
-
-import { FC, useEffect, useState } from "react";
-import { getBoard, updateBoard, deleteBoard } from "@/services/api";
-import { useAuth } from "@/hooks/useAuth";
+import React, { useEffect, useState } from "react";
+import { getBoard, getCards } from "@/services/api";
+import BoardHeader from "./BoardHeader";
 import KanbanBoard from "./KanbanBoard";
-import type { Board } from "@/types";
-import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
-const BoardClient: FC<{ boardId: string }> = ({ boardId }) => {
-  const { token } = useAuth();
-  const [board, setBoard] = useState<Board | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+interface BoardPageClientProps {
+  boardId: string;
+  initialBoard?: any;
+}
+
+export default function BoardPageClient({ boardId, initialBoard }: BoardPageClientProps) {
+  const [board, setBoard] = useState(initialBoard || null);
+  const [cards, setCards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(!initialBoard);
+  const [cardsLoading, setCardsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+    if (!boardId) return;
+
+    const fetchData = async () => {
       try {
-        const b = await getBoard(boardId, token);
-        setBoard(b);
+        if (!initialBoard) {
+          setLoading(true);
+          const boardData = await getBoard(boardId);
+          setBoard(boardData);
+        }
+        
+        setCardsLoading(true);
+        const cardsData = await getCards(boardId);
+        setCards(cardsData);
       } catch (err: any) {
-        setError(err.message || "Failed to load board");
-      } finally { setLoading(false); }
+        console.error(err);
+        setError(err.message || "Failed to load board data");
+      } finally {
+        setLoading(false);
+        setCardsLoading(false);
+      }
     };
-    load();
-  }, [boardId, token]);
 
-  const handleEdit = async () => {
-    if (!board) return;
-    const title = window.prompt("Board title", board.title) ?? board.title;
-    const description = window.prompt("Description", board.description || "") ?? board.description;
-    try {
-      const updated = await updateBoard(boardId, { title, description }, token);
-      setBoard(updated);
-    } catch (err: any) {
-      alert(err.message || "Update failed");
-    }
-  };
+    fetchData();
+  }, [boardId, initialBoard]);
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this board?")) return;
-    try {
-      await deleteBoard(boardId, token);
-      router.push("/boards");
-    } catch (err: any) {
-      alert(err.message || "Delete failed");
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64 text-slate-700">
+        <Loader2 className="animate-spin h-8 w-8 text-slate-700" />
+      </div>
+    );
+  }
 
-  if (loading) return <div>Loading board...</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
-  if (!board) return <div>Board not found</div>;
+  if (error) {
+    return (
+      <div className="bg-red-50 text-red-700 p-4 rounded">
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (!board) {
+    return (
+      <div className="text-center p-8 text-slate-700">
+        <p>Board not found or you don't have access</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex items-center justify-end gap-2 mb-4">
-        <button onClick={handleEdit} className="text-sm text-blue-600">Edit board</button>
-        <button onClick={handleDelete} className="text-sm text-red-600">Delete board</button>
-      </div>
-      <KanbanBoard board={board} />
+    <div className="p-4 text-slate-900">
+      <BoardHeader board={board} onBoardUpdate={setBoard} />
+      
+      {cardsLoading ? (
+        <div className="flex justify-center items-center h-64 text-slate-700">
+          <Loader2 className="animate-spin h-8 w-8 text-slate-700" />
+        </div>
+      ) : (
+        <KanbanBoard 
+          boardId={boardId}
+          columns={board.columns || []} 
+          cards={cards} 
+          onCardsChange={setCards}
+        />
+      )}
     </div>
   );
-};
-
-export default BoardClient;
+}

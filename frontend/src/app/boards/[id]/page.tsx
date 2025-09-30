@@ -7,6 +7,8 @@ import useCards from "@/hooks/useCards";
 import BoardHeader from "@/components/board/BoardHeader";
 import KanbanBoard from "@/components/board/KanbanBoard";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { ArrowLeft } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 interface Props {
   params: any; // params can be a Promise in this Next.js version
@@ -30,7 +32,7 @@ export default function BoardPage({ params }: Props) {
   }, [params]);
 
   const router = useRouter();
-  const { board, loading: boardLoading, error: boardError } = useBoard(id);
+  const { board, setBoard, loading: boardLoading, error: boardError } = useBoard(id);
   const { cards, setCards, loading: cardsLoading, error: cardsError } = useCards(id);
 
   if (!id || boardLoading || cardsLoading) {
@@ -60,12 +62,19 @@ export default function BoardPage({ params }: Props) {
   return (
     <div className="p-6">
       <div className="mb-4">
-        <button onClick={() => router.push("/boards")} className="text-blue-600 hover:underline">
-          ← Back to Boards
+        <button
+          type="button"
+          onClick={() => router.push("/boards")}
+          aria-label="Back to Boards"
+          title="Back to Boards"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white text-slate-800 border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-200"
+        >
+          <ArrowLeft className="w-4 h-4 text-slate-700" />
+          <span className="font-medium">Back to Boards</span>
         </button>
       </div>
 
-      <BoardHeader board={board} onBoardUpdate={() => { /* update handled via hook if needed */ }} />
+      <BoardHeader board={board} onBoardUpdate={(b:any) => setBoard(b)} />
 
       <div className="mt-4">
         <KanbanBoard
@@ -73,6 +82,7 @@ export default function BoardPage({ params }: Props) {
           columns={board.columns ?? []}
           cards={cards}
           onCardsChange={(updated) => setCards(updated)}
+          onColumnsChange={(cols) => setBoard?.((prev:any) => ({ ...(prev||{}), columns: cols }))}
         />
       </div>
     </div>

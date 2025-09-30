@@ -4,10 +4,13 @@ import { useToast } from "@/context/ToastContext";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { createBoard } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CreateBoardForm() {
   const router = useRouter();
   const toast = useToast();
+  const { token } = useAuth();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -25,14 +28,17 @@ export default function CreateBoardForm() {
     setLoading(true);
     setError("");
     try {
-      // UI-only: simulate create and navigate to boards list
-      setTimeout(() => {
-        toast.show("Board created (local)", "success");
-        router.push("/boards");
-      }, 400);
+      console.debug("[ui] submitting createBoard", { apiUrl: process.env.NEXT_PUBLIC_API_URL, tokenPresent: !!token, title });
+      const board = await createBoard(title.trim(), token ?? undefined, description.trim());
+      console.debug("[ui] createBoard success", board);
+      if (!board || !board.id) {
+        throw new Error("Invalid response from server");
+      }
+      toast.show("Board created", "success");
+      router.push(`/boards/${encodeURIComponent(board.id)}`);
     } catch (err: any) {
-      console.error("createBoard error:", err);
-      const msg = err?.message || "Failed to create board";
+      console.error("[ui] createBoard error", err, err?.payload);
+      const msg = err?.message || (err?.payload && JSON.stringify(err.payload)) || "Failed to create board";
       setError(msg);
       toast.show(msg, "error");
     } finally {
@@ -73,7 +79,7 @@ export default function CreateBoardForm() {
           <Button variant="secondary" onClick={() => router.back()} disabled={loading}>
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button variant="primary" type="submit" disabled={loading}>
             {loading ? <><LoadingSpinner size={16} className="inline-block mr-2" /> Creating...</> : "Create Board"}
           </Button>
         </div>

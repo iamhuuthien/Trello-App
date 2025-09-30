@@ -2,13 +2,14 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Edit2, Trash2, UserPlus } from "lucide-react";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Avatar from "@/components/ui/Avatar";
 import { useToast } from "@/context/ToastContext";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useAuth } from "@/hooks/useAuth";
+import { updateBoard, deleteBoard } from "@/services/api";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import { Edit2, Trash2, X, UserPlus } from "lucide-react";
 
 interface BoardHeaderProps {
   board: any;
@@ -27,6 +28,7 @@ function memberEmailFromId(m: string | { id?: string }) {
 export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) {
   const router = useRouter();
   const toast = useToast();
+  const { token } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(board?.title || board?.name || "");
@@ -48,17 +50,19 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
     }
     setSaving(true);
     try {
-      // UI-only: update local board and call callback
-      const updated = { ...(board || {}), title: title.trim(), description };
-      onBoardUpdate?.(updated);
-      toast.show("Board saved (local)", "success");
+      // Persist to backend
+      const payload = { title: title.trim(), description };
+      const updatedBoard = await updateBoard(board.id, payload, token ?? undefined);
+      // notify parent with latest board object
+      onBoardUpdate?.(updatedBoard);
+      toast.show("Board saved", "success");
     } catch (err: any) {
       console.error(err);
-      toast.show("Failed to save board (local)", "error");
+      toast.show(err?.message || "Failed to save board", "error");
     } finally {
       setSaving(false);
     }
-  }, [board, title, description, onBoardUpdate, toast]);
+  }, [board, title, description, onBoardUpdate, toast, token]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -98,14 +102,18 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
 
   const handleDeleteConfirmed = async () => {
     setDeleting(true);
-    // UI-only: call callback / navigate back
-    setTimeout(() => {
+    try {
+      await deleteBoard(board.id, token ?? undefined);
+      toast.show("Board deleted", "success");
+      onBoardUpdate?.(null);
+      router.push("/boards");
+    } catch (err: any) {
+      console.error("deleteBoard failed", err);
+      toast.show(err?.message || "Failed to delete board", "error");
+    } finally {
       setDeleting(false);
       setShowDeleteModal(false);
-      onBoardUpdate?.(null);
-      toast.show("Board deleted (local)", "success");
-      router.push("/boards");
-    }, 500);
+    }
   };
 
   const isOwner = true; // UI-only: show Owner badge for demo
@@ -136,7 +144,7 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
               <Button variant="secondary" onClick={() => { setIsEditing(false); skipNextAuto.current = true; }}>
                 Cancel
               </Button>
-              <Button onClick={() => { doSave(); setIsEditing(false); }} disabled={saving}>
+              <Button variant="primary" onClick={() => { doSave(); setIsEditing(false); }} disabled={saving}>
                 {saving ? <><LoadingSpinner size={16} className="inline-block mr-2" /> Saving...</> : "Save"}
               </Button>
             </div>
@@ -150,37 +158,48 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
             </div>
             {board.description && <p className="text-sm text-slate-700 mt-1">{board.description}</p>}
 
-            <div className="mt-3 flex items-center gap-2">
-              <Button variant="ghost" onClick={() => setIsEditing(true)}>
-                <Edit2 className="w-4 h-4 mr-2" /> Edit
+            <div className="mt-3 flex items-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setIsEditing(true)}
+                title="Edit board"
+                className="inline-flex items-center gap-2"
+              >
+                <Edit2 className="w-4 h-4" /> Edit
               </Button>
-              <Button variant="ghost" onClick={() => setShowDeleteModal(true)}>
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
+
+              <Button
+                variant="danger"
+                onClick={() => setShowDeleteModal(true)}
+                title="Delete board"
+                className="inline-flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
               </Button>
+
+              {/* <div className="ml-4 flex items-center gap-2">
+                <Input
+                  placeholder="user@example.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-64 text-slate-900 bg-white"
+                />
+                <Button variant="accent" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+                  {inviting ? <><LoadingSpinner size={14} className="inline-block mr-2" /> Sending...</> : <><UserPlus className="w-4 h-4 mr-2" /> Invite</>}
+                </Button>
+              </div> */}
             </div>
           </>
         )}
 
         <div className="mt-4 flex items-center gap-3">
+          {/* owner avatars / meta */}
           <div className="flex -space-x-2">
             {members.slice(0, 6).map((m: any, idx: number) => {
               const email = memberEmailFromId(m);
               return <div key={idx} className="border-2 border-white rounded-full"><Avatar name={email || undefined} size="sm" /></div>;
             })}
             {members.length > 6 && <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600">+{members.length - 6}</div>}
-          </div>
-
-          <div className="ml-4 flex items-center gap-2">
-            <Input
-              className="w-64 text-slate-900 bg-white"
-              label="Invite member (email)"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="user@example.com"
-            />
-            <Button onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
-              {inviting ? <><LoadingSpinner size={14} className="inline-block mr-2" /> Sending...</> : <><UserPlus className="w-4 h-4 mr-2" /> Invite</>}
-            </Button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { AuthProvider } from "../context/AuthContext";
 import ClientGuard from "../components/layout/ClientGuard";
 import LayoutRenderer from "../components/layout/LayoutRenderer";
 import { ToastProvider } from "../context/ToastContext";
+import ConfirmProvider from "@/components/ui/ConfirmProvider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +13,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <ToastProvider>
             <ClientGuard>
-              <LayoutRenderer>{children}</LayoutRenderer>
+              <ConfirmProvider>
+                <LayoutRenderer>{children}</LayoutRenderer>
+              </ConfirmProvider>
             </ClientGuard>
           </ToastProvider>
         </AuthProvider>

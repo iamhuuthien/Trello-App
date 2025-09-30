@@ -15,6 +15,7 @@ router.post("/", auth, body("title").isString().notEmpty(), boardsCtrl.createBoa
 router.get("/:id", boardsCtrl.getBoard);
 router.put("/:id", boardsCtrl.updateBoard);
 router.delete("/:id", auth, boardsCtrl.deleteBoard);
+router.post("/:id/columns", auth, boardsCtrl.addColumn);
 
 // Cards
 router.get("/:boardId/cards", auth, cardsCtrl.listCards);

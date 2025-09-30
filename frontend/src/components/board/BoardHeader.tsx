@@ -2,13 +2,14 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Edit2, Trash2, UserPlus } from "lucide-react";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import Avatar from "@/components/ui/Avatar";
 import { useToast } from "@/context/ToastContext";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useAuth } from "@/hooks/useAuth";
+import { updateBoard, deleteBoard } from "@/services/api";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import { Edit2, Trash2, X, UserPlus } from "lucide-react";
 
 interface BoardHeaderProps {
   board: any;
@@ -27,6 +28,7 @@ function memberEmailFromId(m: string | { id?: string }) {
 export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) {
   const router = useRouter();
   const toast = useToast();
+  const { token } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(board?.title || board?.name || "");
@@ -48,17 +50,19 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
     }
     setSaving(true);
     try {
-      // UI-only: update local board and call callback
-      const updated = { ...(board || {}), title: title.trim(), description };
-      onBoardUpdate?.(updated);
-      toast.show("Board saved (local)", "success");
+      // Persist to backend
+      const payload = { title: title.trim(), description };
+      const updatedBoard = await updateBoard(board.id, payload, token ?? undefined);
+      // notify parent with latest board object
+      onBoardUpdate?.(updatedBoard);
+      toast.show("Board saved", "success");
     } catch (err: any) {
       console.error(err);
-      toast.show("Failed to save board (local)", "error");
+      toast.show(err?.message || "Failed to save board", "error");
     } finally {
       setSaving(false);
     }
-  }, [board, title, description, onBoardUpdate, toast]);
+  }, [board, title, description, onBoardUpdate, toast, token]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -98,14 +102,18 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
 
   const handleDeleteConfirmed = async () => {
     setDeleting(true);
-    // UI-only: call callback / navigate back
-    setTimeout(() => {
+    try {
+      await deleteBoard(board.id, token ?? undefined);
+      toast.show("Board deleted", "success");
+      onBoardUpdate?.(null);
+      router.push("/boards");
+    } catch (err: any) {
+      console.error("deleteBoard failed", err);
+      toast.show(err?.message || "Failed to delete board", "error");
+    } finally {
       setDeleting(false);
       setShowDeleteModal(false);
-      onBoardUpdate?.(null);
-      toast.show("Board deleted (local)", "success");
-      router.push("/boards");
-    }, 500);
+    }
   };
 
   const isOwner = true; // UI-only: show Owner badge for demo

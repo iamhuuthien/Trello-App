@@ -11,9 +11,10 @@ interface KanbanColumnProps {
   columnId: string;
   cards: any[];
   onCardsChange: (cards: any[]) => void;
+  columns?: { id: string; title?: string }[]; // <-- new prop
 }
 
-export default function KanbanColumn({ boardId, columnId, cards, onCardsChange }: KanbanColumnProps) {
+export default function KanbanColumn({ boardId, columnId, cards, onCardsChange, columns }: KanbanColumnProps) {
   const droppableId = `${columnId}-drop`;
   const { setNodeRef, isOver } = useDroppable({ id: droppableId });
 
@@ -41,10 +42,15 @@ export default function KanbanColumn({ boardId, columnId, cards, onCardsChange }
         </div>
 
         {cards.map(card => (
-          <KanbanCard key={card.id} boardId={boardId} card={card} onCardUpdate={(c)=> {
-            const updated = cards.map(x => x.id === c.id ? c : x);
-            onCardsChange(updated);
-          }} onCardDelete={(id)=> onCardsChange(cards.filter(c=>c.id !== id))} />
+          <KanbanCard
+            key={card.id}
+            boardId={boardId}
+            card={card}
+            columns={columns} // forward board columns so edit modal can use them
+            onCardUpdate={(c)=> {
+             const updated = cards.map(x => x.id === c.id ? c : x);
+             onCardsChange(updated);
+           }} onCardDelete={(id)=> onCardsChange(cards.filter(c=>c.id !== id))} />
         ))}
 
         {cards.length === 0 && (
@@ -58,6 +64,7 @@ export default function KanbanColumn({ boardId, columnId, cards, onCardsChange }
           isOpen={showCreate}
           onClose={() => setShowCreate(false)}
           initialStatus={columnId}
+          columns={columns} // forward columns list
           onCardCreated={(c)=> {
             onCardsChange([...cards, { ...c, status: c.status ?? columnId }]);
             setShowCreate(false);

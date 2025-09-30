@@ -13,11 +13,13 @@ export default function CardFormModal({
   onCardCreated,
   initialData,
   initialStatus = "todo",
+  columns = [], // accept columns list from parent
 }: any) {
   const isEditing = !!initialData;
   const [name, setName] = useState(initialData?.name || "");
   const [description, setDescription] = useState(initialData?.description || "");
-  const [status, setStatus] = useState(initialData?.status || initialStatus);
+  const defaultStatus = initialData?.status || initialStatus || (Array.isArray(columns) && columns[0]?.id) || "todo";
+  const [status, setStatus] = useState(defaultStatus);
   const [priority, setPriority] = useState(initialData?.priority || "medium");
   const [deadline, setDeadline] = useState(initialData?.deadline ? new Date(initialData.deadline).toISOString().slice(0, 10) : "");
   const [loading, setLoading] = useState(false);
@@ -48,6 +50,18 @@ export default function CardFormModal({
     }
   };
 
+  // ensure status updates when initialData/columns change (when opening modal for different column)
+  React.useEffect(() => {
+    const newDefault = initialData?.status || initialStatus || (Array.isArray(columns) && columns[0]?.id) || "todo";
+    setStatus(newDefault);
+    // also reset name/description when opening fresh create form
+    if (!isEditing) {
+      setName("");
+      setDescription("");
+      setDeadline(initialData?.deadline ? new Date(initialData.deadline).toISOString().slice(0, 10) : "");
+    }
+  }, [initialData, initialStatus, columns, isEditing]);
+
   if (!isOpen) return null;
 
   return (
@@ -72,10 +86,17 @@ export default function CardFormModal({
           <label className="block">
             <div className="mb-1 text-sm text-slate-700">Status</div>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-md border px-3 py-2 text-slate-900 bg-white">
-              <option value="todo">To do</option>
-              <option value="doing">In progress</option>
-              <option value="review">Review</option>
-              <option value="done">Done</option>
+              {Array.isArray(columns) && columns.length > 0 ? (
+                columns.map((col: any) => <option key={col.id} value={col.id}>{col.title ?? col.id}</option>)
+              ) : (
+                // fallback to common defaults if no columns provided
+                <>
+                  <option value="todo">To do</option>
+                  <option value="doing">In progress</option>
+                  <option value="review">Review</option>
+                  <option value="done">Done</option>
+                </>
+              )}
             </select>
           </label>
 

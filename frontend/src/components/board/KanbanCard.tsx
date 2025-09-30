@@ -17,9 +17,10 @@ interface KanbanCardProps {
   card: any;
   onCardUpdate?: (c: any) => void;
   onCardDelete?: (id: string) => void;
+  columns?: { id: string; title?: string }[]; // optional list of board columns
 }
 
-export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete }: KanbanCardProps) {
+export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete, columns }: KanbanCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [localDeleting, setLocalDeleting] = useState(false);
@@ -128,6 +129,7 @@ export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete }
           boardId={boardId}
           isOpen={isEditing}
           initialData={card}
+          columns={columns} // provide columns so status select shows board columns
           onClose={() => setIsEditing(false)}
           onCardCreated={(updated) => {
             onCardUpdate?.(updated);

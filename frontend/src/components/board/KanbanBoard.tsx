@@ -127,7 +127,7 @@ export default function KanbanBoard({ boardId, columns, cards, onCardsChange, on
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <SortableContext items={columns.map(c => String(c.id))} strategy={horizontalListSortingStrategy}>
           <div className="flex gap-4 items-start" style={{ minWidth: Math.max(800, columns.length * 280) }}>
-            {columns.map(column => {
+            {columns.map((column) => {
               // useSortable for column container
               const sortable = useSortable({ id: column.id });
               const transform = sortable.transform ? CSS.Transform.toString(sortable.transform) : undefined;
@@ -137,13 +137,7 @@ export default function KanbanBoard({ boardId, columns, cards, onCardsChange, on
               };
 
               return (
-                <div
-                  key={column.id}
-                  ref={sortable.setNodeRef}
-                  style={style}
-                  className="w-80 flex-shrink-0"
-                  data-testid={`kanban-column-${column.id}`}
-                >
+                <div key={column.id} ref={sortable.setNodeRef} style={style} className="w-80 flex-shrink-0">
                   <div className="bg-white rounded-md p-2 h-full border border-slate-100">
                     <div
                       className="flex justify-between items-center mb-3 px-2 cursor-default select-none"
@@ -183,6 +177,7 @@ export default function KanbanBoard({ boardId, columns, cards, onCardsChange, on
                       columnId={column.id}
                       cards={cardsByColumn[column.id] || []}
                       onCardsChange={onCardsChange}
+                      columns={columns} // pass board columns so CardFormModal can render all statuses
                     />
                   </div>
                 </div>

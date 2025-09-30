@@ -7,6 +7,7 @@ import useCards from "@/hooks/useCards";
 import BoardHeader from "@/components/board/BoardHeader";
 import KanbanBoard from "@/components/board/KanbanBoard";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { ArrowLeft } from "lucide-react";
 
 interface Props {
   params: any; // params can be a Promise in this Next.js version
@@ -60,8 +61,12 @@ export default function BoardPage({ params }: Props) {
   return (
     <div className="p-6">
       <div className="mb-4">
-        <button onClick={() => router.push("/boards")} className="text-blue-600 hover:underline">
-          ← Back to Boards
+        <button
+          onClick={() => router.push("/boards")}
+          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Boards
         </button>
       </div>
 

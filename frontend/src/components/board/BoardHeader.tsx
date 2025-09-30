@@ -151,10 +151,19 @@ export default function BoardHeader({ board, onBoardUpdate }: BoardHeaderProps) 
             {board.description && <p className="text-sm text-slate-700 mt-1">{board.description}</p>}
 
             <div className="mt-3 flex items-center gap-2">
-              <Button variant="ghost" onClick={() => setIsEditing(true)}>
+              <Button
+                variant="ghost"
+                onClick={() => setIsEditing(true)}
+                className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-950"
+              >
                 <Edit2 className="w-4 h-4 mr-2" /> Edit
               </Button>
-              <Button variant="ghost" onClick={() => setShowDeleteModal(true)}>
+
+              <Button
+                variant="ghost"
+                onClick={() => setShowDeleteModal(true)}
+                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950"
+              >
                 <Trash2 className="w-4 h-4 mr-2" /> Delete
               </Button>
             </div>

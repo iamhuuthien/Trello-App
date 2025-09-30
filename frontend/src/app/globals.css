@@ -1,41 +1,50 @@
 @import "tailwindcss";
 
-/* Biến màu mặc định (Light mode) */
+/* Force light mode colors (use Tailwind-like palette) */
 :root {
-  --background: #ffffff;
-  --foreground: #111827; /* gray-800 */
+  --background: #f9fafb; /* gray-50 */
+  --foreground: #0f172a; /* slate-900 */
   --muted: #6b7280; /* gray-500 */
 
   --primary: #2563eb; /* blue-600 */
   --primary-hover: #1d4ed8; /* blue-700 */
 
-  --secondary: #f3f4f6; /* gray-100 */
-  --secondary-hover: #e5e7eb; /* gray-200 */
+  --secondary: #ffffff; /* white */
+  --secondary-hover: #f3f4f6; /* gray-100 */
 
   --border: #e5e7eb; /* gray-200 */
   --card: #ffffff;
-  --card-foreground: #111827; /* gray-900 */
+  --card-foreground: #0f172a; /* slate-900 */
 
-  --radius: 0.5rem; /* 8px border radius */
+  --radius: 0.5rem;
 }
 
-/* Dark mode */
+/* Ensure browser renders as light color-scheme */
+html { color-scheme: light; }
+
+/* Override any dark-mode rules: make .dark and prefers-color-scheme dark act like light */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #111827; /* gray-900 */
-    --foreground: #f9fafb; /* gray-50 */
-    --muted: #9ca3af; /* gray-400 */
+    --background: #f9fafb;
+    --foreground: #0f172a;
+    --muted: #6b7280;
 
-    --primary: #3b82f6; /* blue-500 */
-    --primary-hover: #2563eb; /* blue-600 */
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
 
-    --secondary: #1f2937; /* gray-800 */
-    --secondary-hover: #374151; /* gray-700 */
+    --secondary: #ffffff;
+    --secondary-hover: #f3f4f6;
 
-    --border: #374151; /* gray-700 */
-    --card: #1f2937;
-    --card-foreground: #f9fafb;
+    --border: #e5e7eb;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
   }
+}
+
+/* Also override Tailwind 'dark' class targets by forcing base element colors */
+.dark, .dark * {
+  background-color: transparent !important;
+  color: inherit !important;
 }
 
 /* Apply global */
@@ -53,7 +62,7 @@ input,
 textarea,
 select {
   color: var(--foreground) !important;
-  background-color: transparent !important;
+  background-color: var(--card) !important;
   border: 1px solid var(--border) !important;
   padding: 0.5rem;
   border-radius: 0.5rem;

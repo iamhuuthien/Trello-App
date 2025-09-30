@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
 import useBoards from "@/hooks/useBoards";
@@ -12,16 +13,17 @@ export default function BoardsPage() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Boards</h2>
-        <div>
-          <button
-            onClick={() => router.push("/boards/new")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700"
-          >
-            New board
-          </button>
-        </div>
+      <div className="mb-6 flex items-center justify-between">
+        {/* Title: ensure dark text on white */}
+        <h1 className="text-2xl font-semibold text-slate-900 force-foreground">Boards</h1>
+
+        {/* New board button: visible primary style */}
+        <Link
+          href="/boards/new"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium shadow-sm"
+        >
+          New board
+        </Link>
       </div>
 
       {loading && (

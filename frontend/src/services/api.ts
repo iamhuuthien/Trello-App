@@ -100,4 +100,102 @@ export async function addBoardColumn(boardId: string, column: { id?: string; tit
   return payload.board ?? payload;
 }
 
+// --- CARDS API ---
+export async function getCards(boardId: string, token?: string | null) {
+  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards`, token);
+  return payload.cards ?? payload;
+}
+
+export async function createCard(boardId: string, card: any, token?: string | null) {
+  const payload = await fetchWithAuth(`/boards/${encodeURIComponent(boardId)}/cards`, token, {
+    method: "POST",
+    body: JSON.stringify(card),
+  });
+  // backend returns { ok: true, card }
+  return payload.card ?? payload;
+}
+
+export async function updateCard(boardId: string, cardId: string, body: any, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}`,
+    token,
+    { method: "PUT", body: JSON.stringify(body) }
+  );
+  return payload.card ?? payload;
+}
+
+export async function deleteCard(boardId: string, cardId: string, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}`,
+    token,
+    { method: "DELETE" }
+  );
+  return payload;
+}
+
+// --- TASKS API ---
+export async function getTasks(boardId: string, cardId: string, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks`,
+    token
+  );
+  return payload.tasks ?? payload;
+}
+
+export async function createTask(boardId: string, cardId: string, task: any, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks`,
+    token,
+    { method: "POST", body: JSON.stringify(task) }
+  );
+  return payload.task ?? payload;
+}
+
+export async function getTask(boardId: string, cardId: string, taskId: string, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks/${encodeURIComponent(taskId)}`,
+    token
+  );
+  return payload.task ?? payload;
+}
+
+export async function updateTask(boardId: string, cardId: string, taskId: string, body: any, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks/${encodeURIComponent(taskId)}`,
+    token,
+    { method: "PUT", body: JSON.stringify(body) }
+  );
+  return payload.task ?? payload;
+}
+
+export async function deleteTask(boardId: string, cardId: string, taskId: string, token?: string | null) {
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks/${encodeURIComponent(taskId)}`,
+    token,
+    { method: "DELETE" }
+  );
+  return payload;
+}
+
+// assign / unassign (backend accepts { userId } or { email })
+export async function assignMember(boardId: string, cardId: string, taskId: string, memberIdOrEmail: string, token?: string | null) {
+  const body = memberIdOrEmail.includes("@") ? { email: memberIdOrEmail } : { userId: memberIdOrEmail };
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks/${encodeURIComponent(taskId)}/assign`,
+    token,
+    { method: "POST", body: JSON.stringify(body) }
+  );
+  return payload.task ?? payload;
+}
+
+export async function removeAssign(boardId: string, cardId: string, taskId: string, memberIdOrEmail: string, token?: string | null) {
+  const body = memberIdOrEmail.includes("@") ? { email: memberIdOrEmail } : { userId: memberIdOrEmail };
+  const payload = await fetchWithAuth(
+    `/boards/${encodeURIComponent(boardId)}/cards/${encodeURIComponent(cardId)}/tasks/${encodeURIComponent(taskId)}/assign`,
+    token,
+    { method: "DELETE", body: JSON.stringify(body) }
+  );
+  return payload.task ?? payload;
+}
+
 export { fetchWithAuth };

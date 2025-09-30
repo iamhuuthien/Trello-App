@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import KanbanColumn from "./KanbanColumn";
-import { addBoardColumn } from "@/services/api";
+import { addBoardColumn, updateCard } from "@/services/api"; // updateCard added
 import { appPrompt } from "@/components/ui/ConfirmProvider";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -45,7 +45,7 @@ export default function KanbanBoard({ boardId, columns, cards, onCardsChange, on
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!active || !over) return;
     const cardId = String(active.id);
@@ -54,9 +54,19 @@ export default function KanbanBoard({ boardId, columns, cards, onCardsChange, on
     if (!card) return;
     if (card.status === destColumnId) return;
 
-    // optimistic UI only
+    // optimistic UI update
     const updated = cards.map(c => (c.id === cardId ? { ...c, status: destColumnId } : c));
     onCardsChange(updated);
+
+    // persist
+    try {
+      await updateCard(boardId, cardId, { status: destColumnId }, token ?? undefined);
+    } catch (err: any) {
+      console.error("persist status failed", err);
+      // rollback UI
+      const rolled = cards.map(c => (c.id === cardId ? { ...c, status: card.status } : c));
+      onCardsChange(rolled);
+    }
   };
 
   return (

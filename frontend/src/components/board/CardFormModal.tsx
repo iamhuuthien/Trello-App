@@ -3,6 +3,8 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { X } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/hooks/useAuth";
+import { createCard, updateCard } from "@/services/api";
 
 export default function CardFormModal({
   boardId,
@@ -21,33 +23,26 @@ export default function CardFormModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const toast = useToast();
+  const { token } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Name is required");
-      return;
-    }
+    if (!name.trim()) { setError("Name is required"); return; }
     setLoading(true);
-    setError("");
     try {
-      // UI-only: construct card object and notify parent
-      const card = {
-        id: isEditing ? initialData.id : `local-${Date.now()}`,
-        boardId,
-        name: name.trim(),
-        description,
-        status,
-        priority,
-        deadline: deadline ? new Date(deadline).toISOString() : null,
-        members: initialData?.members || [],
-      };
-      onCardCreated?.(card);
-      toast.show(isEditing ? "Card updated (local)" : "Card created (local)", "success");
+      let saved;
+      const payload = { name: name.trim(), description, status, priority, deadline: deadline ? new Date(deadline).toISOString() : null, members: initialData?.members || [] };
+      if (isEditing) {
+        saved = await updateCard(boardId, initialData.id, payload, token ?? undefined);
+      } else {
+        saved = await createCard(boardId, payload, token ?? undefined);
+      }
+      onCardCreated?.(saved);
+      toast.show(isEditing ? "Card updated" : "Card created", "success");
       onClose();
     } catch (err: any) {
-      setError(err.message || "Failed to save card");
-      toast.show("Failed to save card (local)", "error");
+      setError(err?.message || "Save failed");
+      toast.show(err?.message || "Save failed", "error");
     } finally {
       setLoading(false);
     }

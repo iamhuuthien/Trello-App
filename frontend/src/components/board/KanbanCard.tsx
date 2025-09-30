@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import CardFormModal from "./CardFormModal";
+import CardDetailModal from "./CardDetailModal";
 import Button from "@/components/ui/Button";
 import { Calendar } from "lucide-react";
 import Avatar from "@/components/ui/Avatar";
@@ -19,6 +20,7 @@ interface KanbanCardProps {
 
 export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete }: KanbanCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [localDeleting, setLocalDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const toast = useToast();
@@ -54,7 +56,7 @@ export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete }
         {...listeners}
         {...attributes}
         className={`mb-2 p-3 rounded shadow-sm bg-white cursor-grab ${isDragging ? "opacity-80" : ""}`}
-        onClick={() => setIsEditing(true)}
+        onClick={() => setShowDetail(true)} // open detail on click
       >
         <div className="flex justify-between items-start">
           <div>
@@ -85,6 +87,15 @@ export default function KanbanCard({ boardId, card, onCardUpdate, onCardDelete }
           </div>
         </div>
       </div>
+
+      {showDetail && (
+        <CardDetailModal
+          boardId={boardId}
+          card={card}
+          isOpen={showDetail}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
 
       {isEditing && (
         <CardFormModal

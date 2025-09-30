@@ -35,6 +35,7 @@ export function useTasks(boardId?: string, cardId?: string, pageSize = 50) {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [realtime, setRealtime] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +46,7 @@ export function useTasks(boardId?: string, cardId?: string, pageSize = 50) {
       // realtime listener via Firestore
       setLoading(true);
       setError(null);
+      setRealtime(true);
       try {
         const colRef = collection(db, "boards", boardId, "cards", cardId, "tasks");
         const q = query(colRef, orderBy("createdAt", "asc"));
@@ -69,6 +71,7 @@ export function useTasks(boardId?: string, cardId?: string, pageSize = 50) {
       }
       return () => {
         mounted = false;
+        setRealtime(false);
         if (unsub) unsub();
       };
     }
@@ -98,7 +101,7 @@ export function useTasks(boardId?: string, cardId?: string, pageSize = 50) {
     };
   }, [boardId, cardId, token, isAuthenticated, pageSize]);
 
-  return { tasks, setTasks, loading, error };
+  return { tasks, setTasks, loading, error, realtime };
 }
 
 export default useTasks;

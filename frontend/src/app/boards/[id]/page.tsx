@@ -31,7 +31,7 @@ export default function BoardPage({ params }: Props) {
   }, [params]);
 
   const router = useRouter();
-  const { board, loading: boardLoading, error: boardError } = useBoard(id);
+  const { board, setBoard, loading: boardLoading, error: boardError } = useBoard(id);
   const { cards, setCards, loading: cardsLoading, error: cardsError } = useCards(id);
 
   if (!id || boardLoading || cardsLoading) {
@@ -78,6 +78,7 @@ export default function BoardPage({ params }: Props) {
           columns={board.columns ?? []}
           cards={cards}
           onCardsChange={(updated) => setCards(updated)}
+          onColumnsChange={(cols) => setBoard?.((prev:any) => ({ ...(prev||{}), columns: cols }))}
         />
       </div>
     </div>

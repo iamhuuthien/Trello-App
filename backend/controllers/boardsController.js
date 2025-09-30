@@ -72,10 +72,47 @@ async function deleteBoard(req, res) {
   }
 }
 
+// Add column controller
+async function addColumn(req, res) {
+  try {
+    const boardId = req.params.id;
+    const { title, id: colId } = req.body || {};
+    if (!title || String(title).trim() === "") return res.status(400).json({ error: "invalid_title" });
+
+    // check board exists
+    const r = await boardService.findById(boardId);
+    if (!r) return res.status(404).json({ error: "not_found" });
+
+    // only owner allowed (or you can relax)
+    const owner = `user:${String(req.user.email).toLowerCase()}`;
+    if (r.data.ownerId !== owner) return res.status(403).json({ error: "forbidden" });
+
+    // build new column id (slug-like) if not provided
+    const slugify = (s) =>
+      String(s || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || `col-${Date.now()}`;
+
+    const newCol = { id: colId || slugify(title), title: title.trim() };
+
+    const existingCols = Array.isArray(r.data.columns) ? r.data.columns : boardService.DEFAULT_COLUMNS.slice();
+    existingCols.push(newCol);
+
+    const updated = await boardService.updateBoard(boardId, { columns: existingCols });
+    const out = { ...updated, columns: updated.columns && updated.columns.length ? updated.columns : boardService.DEFAULT_COLUMNS };
+    return res.status(201).json({ ok: true, board: out });
+  } catch (err) {
+    console.error("addColumn error:", err);
+    return res.status(500).json({ error: "internal_error" });
+  }
+}
+
 module.exports = {
   listBoards,
   createBoard,
   getBoard,
   updateBoard: updateBoardHandler,
   deleteBoard,
+  addColumn,
 };

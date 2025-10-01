@@ -221,7 +221,7 @@ Built with Next.js 15, TypeScript, and Express.js. Deploy to Vercel in one click
 #### 1️⃣ **Clone & Install**
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/trello-app.git
+git clone https://github.com/iamhuuthien/trello-app.git
 cd trello-app
 
 # Install dependencies
@@ -412,8 +412,8 @@ Built with these amazing open-source projects:
 
 ## 📞 Support & Community
 
-- 💬 **[Discussions](https://github.com/yourusername/trello-app/discussions)** - Ask questions, share ideas
-- 🐛 **[Issues](https://github.com/yourusername/trello-app/issues)** - Report bugs or request features
+- 💬 **[Discussions](https://github.com/iamhuuthien/trello-app/discussions)** - Ask questions, share ideas
+- 🐛 **[Issues](https://github.com/iamhuuthien/trello-app/issues)** - Report bugs or request features
 - 📧 **Email**: thiennguyenhuu3@gmail.com
 - 🌐 **Website**: 
 
@@ -428,15 +428,15 @@ Built with these amazing open-source projects:
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/yourusername">iamhuuthien</a>
+  Made with ❤️ by <a href="https://github.com/iamhuuthien">iamhuuthien</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/yourusername/trello-app">
-    <img src="https://img.shields.io/github/stars/yourusername/trello-app?style=social" alt="GitHub Stars" />
+  <a href="https://github.com/iamhuuthien/trello-app">
+    <img src="https://img.shields.io/github/stars/iamhuuthien/trello-app?style=social" alt="GitHub Stars" />
   </a>
-  <a href="https://github.com/yourusername/trello-app/network/members">
-    <img src="https://img.shields.io/github/forks/yourusername/trello-app?style=social" alt="GitHub Forks" />
+  <a href="https://github.com/iamhuuthien/trello-app/network/members">
+    <img src="https://img.shields.io/github/forks/iamhuuthien/trello-app?style=social" alt="GitHub Forks" />
   </a>
 </p>
 

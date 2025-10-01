@@ -1,93 +1,287 @@
-# Backend — Complete Setup
+# Backend — Setup & Run (clean, repeatable)
 
-This document explains how to run the backend locally (emulator or cloud), seed the DB, and common troubleshooting. Use PowerShell on Windows.
+This document explains how to get the backend running locally and the minimal configuration other developers need to know.
 
-Requirements
-- Node 18+ and pnpm
-- Firebase CLI (optional for emulator): npm i -g firebase-tools
-- If using cloud Firestore: a Firebase project + service account (do NOT commit JSON)
+---
 
-Quick commands (one-liners)
-- Install deps:
+## Summary / Architecture
+- Runtime: Node.js (LTS) — tested with Node 18/20.
+- Package manager: pnpm (>=7, tested with pnpm 10).
+- Frameworks / libs:
+  - Express 5
+  - firebase-admin (Firestore + Auth)
+  - jsonwebtoken (JWT)
+  - nodemailer / @sendgrid/mail for email
+- Pattern: REST API server (Express) + Firebase Admin SDK as primary datastore. Auth via signed JWT tokens (issued by backend). Firestore used for boards/cards/tasks; renderer is frontend Next.js.
+
+---
+
+## Recommended Versions
+- Node.js: 18.x or 20.x (LTS)
+- pnpm: 7+ (use same pnpm version as repo if possible)
+- Firebase CLI (optional for emulator): latest stable
+
+Check:
+- node -v
+- pnpm -v
+- npx firebase --version
+
+---
+
+## Quick Start (local dev)
+
+1) Install
+- Windows PowerShell:
   cd C:\TrelloApp\Trello-App\backend
   pnpm install
+
+- macOS / Linux:
+  cd ~/path/to/trello-app/backend
+  pnpm install
+
+2) Copy example env and edit
+- cp .env.example .env
+- Fill values (never commit `.env`).
+
+3) Run (cloud Firestore)
+- If using a real Firebase service account (cloud):
+  - Set GOOGLE_APPLICATION_CREDENTIALS to your JSON key path OR populate FIREBASE_* vars in .env.
+  - Start server:
+    pnpm run dev
+
+4) Run (recommended for local dev — Firestore emulator)
 - Start emulator:
   pnpm run emulators:start
-- Seed emulator:
-  # PowerShell
+- In same shell set emulator env (PowerShell):
   $env:USE_FIRESTORE_EMULATOR="1"
   $env:FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
+  $env:FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+- Seed demo data:
   pnpm run seed
-- Run backend:
+- Start server:
   pnpm run dev
 
-.env (edit backend/.env or copy from .env.example)
-- Do NOT commit .env or service account JSON.
-- Example key values (safe for local emulator):
-  FIREBASE_PROJECT_ID=trello-app-c831f
-  FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@trello-app-c831f.iam.gserviceaccount.com
-  FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY\n"
-  USE_FIRESTORE_EMULATOR=1
-  FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-  JWT_SECRET=change_me_securely
-  SMTP_HOST=            # optional
-  SMTP_USER=
-  SMTP_PASS=
+Server will listen on PORT (default 4001). Health check:
+GET http://localhost:4001/health
 
-Emulator vs Cloud
-- Emulator (recommended for dev): start firebase emulators, set USE_FIRESTORE_EMULATOR=1 and FIRESTORE_EMULATOR_HOST before seeding or running backend. When the emulator is running, admin SDK will connect to it.
-- Cloud Firestore: set GOOGLE_APPLICATION_CREDENTIALS pointing to your local service account JSON or populate FIREBASE_* env fields. Be careful: seeding then may write to cloud.
+---
 
-Seed script
-- Use `pnpm run seed`. Ensure emulator is running and USE_FIRESTORE_EMULATOR=1 is set in the terminal session to seed emulator. The script seeds collections: users, boards, cards, tasks, invitations, githubAttachments.
+## .env notes & examples
+Use `.env.example` as reference. Key points:
 
-Run flow (recommended)
-1. Open terminal A:
-   cd C:\TrelloApp\Trello-App\backend
-   pnpm run emulators:start
-2. Open terminal B:
-   cd C:\TrelloApp\Trello-App\backend
-   $env:USE_FIRESTORE_EMULATOR="1"
-   $env:FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
-   pnpm run seed
-   pnpm run dev
-3. Visit:
-   - Emulator UI: http://127.0.0.1:4000
-   - Backend: http://localhost:4000
+- JWT_SECRET: set a strong random string for production.
+- FIREBASE_PRIVATE_KEY: when placed in .env, it must be a single-line string with `\n` escapes:
 
-Test endpoints (curl examples)
-- Signup (send code):
-  curl -X POST http://localhost:4000/auth/signup -H "Content-Type: application/json" -d "{\"email\":\"alice@example.com\"}"
-- Signin (use saved code):
-  curl -X POST http://localhost:4000/auth/signin -H "Content-Type: application/json" -d "{\"email\":\"alice@example.com\",\"code\":\"123456\"}"
-- Boards (replace TOKEN):
-  curl -H "Authorization: Bearer <TOKEN>" http://localhost:4000/boards
+Example (.env)
+```
+PORT=4001
+JWT_SECRET=change_me_securely
+FIREBASE_PROJECT_ID=trello-app-c831f
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@project.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...AB\n-----END PRIVATE KEY-----\n"
+SENDGRID_API_KEY=SG.YOUR_KEY
+SMTP_FROM="no-reply@your-domain.com"
+```
 
-Important notes & troubleshooting
-- dotenv: index.js requires dotenv — .env is loaded only when running `node index.js` (nodemon). A plain `node -e` does not load .env unless you use -r dotenv/config.
-- If emulator UI shows empty: you seeded cloud Firestore (not emulator). Ensure USE_FIRESTORE_EMULATOR is set and emulator is running before seeding.
-- If `GOOGLE_APPLICATION_CREDENTIALS` is set, admin SDK prefers that file — unset it to force env-based cert or emulator.
-- If a Firebase service account file was accidentally committed: remove it from git index, rotate the key in Firebase Console, and add ignore rules.
-  git rm --cached backend/<file>.json
-  git commit -m "chore(security): remove firebase service account"
-- SSH / pnpm issues: if pnpm install prompts for SSH passphrase, add SSH key to ssh-agent or convert to HTTPS remotes.
+To convert a JSON private key into escaped form:
+- PowerShell (one-liner):
+  $k=(Get-Content -Raw C:\path\to\service-account.json | ConvertFrom-Json).private_key -replace "`n","\\n"; echo $k
+- Bash:
+  PRIVATE=$(jq -r .private_key service-account.json | sed ':a;N;$!ba;s/\n/\\n/g'); echo "$PRIVATE"
 
-Git & branch
-- Create feature branch and commit changes with small messages:
-  git switch -c feature/backend-skeleton
-  git add .
-  git commit -m "feat(backend): scaffold express server, auth email-code and boards CRUD"
-  git push -u origin feature/backend-skeleton
+Alternative: set `GOOGLE_APPLICATION_CREDENTIALS` to the JSON file path — then you don't need FIREBASE_* envs.
 
-Files of interest
-- index.js — server + firebase init
-- routes/auth.js — signup/signin (email-code)
-- routes/boards.js — CRUD endpoints
-- middleware/auth.js — JWT guard
-- scripts/seedFirestore.js — seed script
-- firebase.json, .firebaserc — emulator config
+---
+
+## Email configuration
+- Preferred: Set SENDGRID_API_KEY + SMTP_FROM (verified sender).
+- Fallback dev: If no SendGrid, module falls back to Ethereal (dev-only preview).
+- SMTP vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS — used when configured.
+
+---
+
+## Scripts (package.json)
+- pnpm run dev       — nodemon + node index.js (dev)
+- pnpm run start     — node index.js (production)
+- pnpm run seed      — scripts/seedFirestore.js (seed demo)
+- pnpm run emulators:start — firebase emulators:start (firestore + auth)
+
+---
+
+## Seeding & tokens
+- `pnpm run seed` or `node scripts/seed_two_users_and_tokens.js`
+- `seed_two_users_and_tokens.js` writes `seed_tokens.json` with JWT tokens for quick frontend testing.
+
+---
+
+## Security & best practices
+- NEVER commit `.env` or service account JSON.
+- Rotate Firebase service account keys if accidentally leaked.
+- For CI / production inject secrets through platform secret store (GitHub Actions, Vercel secrets, etc).
+- Use strong `JWT_SECRET` in prod.
+
+---
+
+## Common troubleshooting
+- Firestore permission/credential errors: ensure correct role/key or run the emulator and set USE_FIRESTORE_EMULATOR=1.
+- Private key parse error: check you preserved `\n` escapes or used GOOGLE_APPLICATION_CREDENTIALS.
+- If emails fail: check SENDGRID_API_KEY and SMTP_FROM; look for provider response in server logs.
+
+---
+
+## Deployment notes (short)
+- Provide GOOGLE_APPLICATION_CREDENTIALS via host secret (or set FIREBASE_* correctly).
+- Use environment variables through host (do not embed secrets).
+- Run `pnpm install --prod` and `pnpm run start` (or use a process manager).
+
+---
 
 If you want, I can:
-- patch seedFirestore.js to auto-detect emulator and avoid cloud writes,
-- remove service account from git index for you,
-- add a Postman collection or simple smoke tests.
+- generate a `.env.example` (already present) with clearer comments,
+- add a small PowerShell script `scripts/setup-env.ps1` to help format private key into .env,
+- or write a Dockerfile + docker-compose for consistent dev environment.
+
+Reply "apply scripts" / "add docker" / "add env helper" to get that next.
+```# Backend — Setup & Run (clean, repeatable)
+
+This document explains how to get the backend running locally and the minimal configuration other developers need to know.
+
+---
+
+## Summary / Architecture
+- Runtime: Node.js (LTS) — tested with Node 18/20.
+- Package manager: pnpm (>=7, tested with pnpm 10).
+- Frameworks / libs:
+  - Express 5
+  - firebase-admin (Firestore + Auth)
+  - jsonwebtoken (JWT)
+  - nodemailer / @sendgrid/mail for email
+- Pattern: REST API server (Express) + Firebase Admin SDK as primary datastore. Auth via signed JWT tokens (issued by backend). Firestore used for boards/cards/tasks; renderer is frontend Next.js.
+
+---
+
+## Recommended Versions
+- Node.js: 18.x or 20.x (LTS)
+- pnpm: 7+ (use same pnpm version as repo if possible)
+- Firebase CLI (optional for emulator): latest stable
+
+Check:
+- node -v
+- pnpm -v
+- npx firebase --version
+
+---
+
+## Quick Start (local dev)
+
+1) Install
+- Windows PowerShell:
+  cd C:\TrelloApp\Trello-App\backend
+  pnpm install
+
+- macOS / Linux:
+  cd ~/path/to/trello-app/backend
+  pnpm install
+
+2) Copy example env and edit
+- cp .env.example .env
+- Fill values (never commit `.env`).
+
+3) Run (cloud Firestore)
+- If using a real Firebase service account (cloud):
+  - Set GOOGLE_APPLICATION_CREDENTIALS to your JSON key path OR populate FIREBASE_* vars in .env.
+  - Start server:
+    pnpm run dev
+
+4) Run (recommended for local dev — Firestore emulator)
+- Start emulator:
+  pnpm run emulators:start
+- In same shell set emulator env (PowerShell):
+  $env:USE_FIRESTORE_EMULATOR="1"
+  $env:FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
+  $env:FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
+- Seed demo data:
+  pnpm run seed
+- Start server:
+  pnpm run dev
+
+Server will listen on PORT (default 4001). Health check:
+GET http://localhost:4001/health
+
+---
+
+## .env notes & examples
+Use `.env.example` as reference. Key points:
+
+-_SECRET: set a strong random string for production.
+- FIREBASE_PRIVATE_KEY: when placed in .env, it must be a single-line string with `\n` escapes:
+
+Example (.env)
+```
+PORT=4001
+JWT_SECRET=change_me_securely
+FIREBASE_PROJECT_ID=trello-app-c831f
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@project.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...AB\n-----END PRIVATE KEY-----\n"
+SENDGRID_API_KEY=SG.YOUR_KEY
+SMTP_FROM="no-reply@your-domain.com"
+```
+
+To convert a JSON private key into escaped form:
+- PowerShell (one-liner):
+  $k=(Get-Content -Raw C:\path\to\service-account.json | ConvertFrom-Json).private_key -replace "`n","\\n"; echo $k
+- Bash:
+  PRIVATE=$(jq -r .private_key service-account.json | sed ':a;N;$!ba;s/\n/\\n/g'); echo "$PRIVATE"
+
+Alternative: set `GOOGLE_APPLICATION_CREDENTIALS` to the JSON file path — then you don't need FIREBASE_* envs.
+
+---
+
+## Email configuration
+- Preferred: Set SENDGRID_API_KEY + SMTP_FROM (verified sender).
+- Fallback dev: If no SendGrid, module falls back to Ethereal (dev-only preview).
+- SMTP vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS — used when configured.
+
+---
+
+## Scripts (package.json)
+- pnpm run dev       — nodemon + node index.js (dev)
+- pnpm run start     — node index.js (production)
+- pnpm run seed      — scripts/seedFirestore.js (seed demo)
+- pnpm run emulators:start — firebase emulators:start (firestore + auth)
+
+---
+
+## Seeding & tokens
+- `pnpm run seed` or `node scripts/seed_two_users_and_tokens.js`
+- `seed_two_users_and_tokens.js` writes `seed_tokens.json` with JWT tokens for quick frontend testing.
+
+---
+
+## Security & best practices
+- NEVER commit `.env` or service account JSON.
+- Rotate Firebase service account keys if accidentally leaked.
+- For CI / production inject secrets through platform secret store (GitHub Actions, Vercel secrets, etc).
+- Use strong `JWT_SECRET` in prod.
+
+---
+
+## Common troubleshooting
+- Firestore permission/credential errors: ensure correct role/key or run the emulator and set USE_FIRESTORE_EMULATOR=1.
+- Private key parse error: check you preserved `\n` escapes or used GOOGLE_APPLICATION_CREDENTIALS.
+- If emails fail: check SENDGRID_API_KEY and SMTP_FROM; look for provider response in server logs.
+
+---
+
+## Deployment notes (short)
+- Provide GOOGLE_APPLICATION_CREDENTIALS via host secret (or set FIREBASE_* correctly).
+- Use environment variables through host (do not embed secrets).
+- Run `pnpm install --prod` and `pnpm run start` (or use a process manager).
+
+---
+
+If you want, I can:
+- generate a `.env.example` (already present) with clearer comments,
+- add a small PowerShell script `scripts/setup-env.ps1` to help format private key into .env,
+- or write a Dockerfile + docker-compose for consistent dev environment.
+

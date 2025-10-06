@@ -13,6 +13,7 @@ interface AuthContextType {
   signin: (email: string, code: string) => Promise<{ ok: boolean; token?: string; error?: string }>;
   logout: () => void;
   updateProfile?: (payload: Partial<User>) => Promise<void>;
+  initialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // Start with null on both server and client to keep SSR output stable
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  // indicates localStorage hydration is complete on client
+  const [initialized, setInitialized] = useState(false);
 
   // After mount, hydrate from localStorage (client-only)
   useEffect(() => {
@@ -34,6 +37,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     } catch (err) {
       // ignore
     }
+    // mark hydration finished (client-only)
+    setInitialized(true);
   }, []);
 
   const isAuthenticated = !!token && !!user;
@@ -81,8 +86,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const t = body.token as string | undefined;
     if (t) {
       setToken(t);
-      // keep minimal user shape; real profile should come from API when needed
-      setUser({ email, name: email.split("@")[0] });
+      setUser({ id: email, email, name: email.split("@")[0] } as any);
       return { ok: true, token: t };
     }
     return { ok: false, error: "No token returned" };
@@ -100,7 +104,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, signup, signin, logout, updateProfile }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, signup, signin, logout, updateProfile, initialized }}>
       {children}
     </AuthContext.Provider>
   );

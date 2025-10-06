@@ -47,10 +47,15 @@ export default function KanbanColumn({ boardId, columnId, cards, onCardsChange, 
             boardId={boardId}
             card={card}
             columns={columns} // forward board columns so edit modal can use them
-            onCardUpdate={(c)=> {
-             const updated = cards.map(x => x.id === c.id ? c : x);
-             onCardsChange(updated);
-           }} onCardDelete={(id)=> onCardsChange(cards.filter(c=>c.id !== id))} />
+            onCardUpdate={(c: any) => {
+              // update single card within the global cards list
+              (onCardsChange as any)((prev: any[]) => (prev || []).map((x) => (x.id === c.id ? c : x)));
+            }}
+            onCardDelete={(id: string) =>
+              // remove card by id from global cards list
+              (onCardsChange as any)((prev: any[]) => (prev || []).filter((x) => x.id !== id))
+            }
+          />
         ))}
 
         {cards.length === 0 && (
@@ -65,8 +70,9 @@ export default function KanbanColumn({ boardId, columnId, cards, onCardsChange, 
           onClose={() => setShowCreate(false)}
           initialStatus={columnId}
           columns={columns} // forward columns list
-          onCardCreated={(c)=> {
-            onCardsChange([...cards, { ...c, status: c.status ?? columnId }]);
+          onCardCreated={(c: any) => {
+            // append new card to the global cards list (preserve other columns)
+            (onCardsChange as any)((prev: any[]) => [...(prev || []), { ...c, status: c.status ?? columnId }]);
             setShowCreate(false);
             toast.show?.("Card created", "success");
           }}

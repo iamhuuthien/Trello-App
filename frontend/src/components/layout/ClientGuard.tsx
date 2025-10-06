@@ -2,30 +2,34 @@
 
 import { FC, useEffect, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 const ClientGuard: FC<{ children: ReactNode }> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initialized } = useAuth();
 
   useEffect(() => {
-    // Nếu đang ở trang login thì không redirect ra
-    if (pathname === "/login") {
-      if (isAuthenticated) {
-        router.replace("/");
-      }
+    // don't run any redirect until auth has been hydrated from localStorage
+    if (!initialized) return;
+
+    // if user is on login page and already authenticated -> go home
+    if (pathname?.startsWith("/login")) {
+      if (isAuthenticated) router.replace("/");
       return;
     }
 
-    // Nếu không phải /login và chưa auth => redirect tới /login
+    // protected routes: if not authenticated after init -> go to /login
     if (!isAuthenticated) {
       router.replace("/login");
     }
-  }, [isAuthenticated, pathname, router]);
+  }, [initialized, isAuthenticated, pathname, router]);
 
-  // Trong lúc chưa xác định auth, tránh flash content: nếu chưa login và không ở /login trả null
-  if (!isAuthenticated && pathname !== "/login") return null;
+  // while we wait for auth hydration, avoid flashing redirects or content
+  if (!initialized) return null;
+
+  // if not authed and not on /login, hide children (redirect in effect)
+  if (!isAuthenticated && !pathname?.startsWith("/login")) return null;
 
   return <>{children}</>;
 };
